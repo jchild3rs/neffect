@@ -14,65 +14,88 @@ export function useNavigation() {
 
 	const navigate = useCallback(
 		(path: string) => {
-			const maybeSearch = path.includes("?") ? path.split("?")[1] : "";
+			const nextUrl = new URL(path, location.href);
 
-			if (maybeSearch) {
-				const searchParams = new URLSearchParams(maybeSearch);
-				routeContext.query.value = Object.fromEntries(searchParams.entries());
-			}
+			// Keep query in context in sync
+			routeContext.query.value = Object.fromEntries(
+				nextUrl.searchParams.entries(),
+			);
 
-			const state = { pathPattern: routeContext.pathPattern };
-			window.history.pushState(state, "", path);
-			window.dispatchEvent(new PopStateEvent("popstate", { state }));
+			// Optionally could also sync hash if you expose it in context
+
+			// Set loading before history/state change to avoid flash
 			routeLoading.value = true;
+
+			const state = {
+				pathPattern: routeContext.pathPattern,
+				href: nextUrl.href,
+			};
+			window.history.pushState(state, "", nextUrl.href);
+			window.dispatchEvent(new PopStateEvent("popstate", { state }));
 		},
 		[routeContext],
 	);
 
-	const handleClick = useCallback(async (e: MouseEvent) => {
-		if (e.defaultPrevented) return;
-		if (e.button !== 0) return;
-		if (e.metaKey || e.ctrlKey || e.altKey) return;
+	const handleClick = useCallback(
+		(e: MouseEvent) => {
+			// Ignore default-prevented, non-left click, or with modifier keys
+			if (e.defaultPrevented) return;
+			if ((e as MouseEvent).button !== 0) return;
+			if (
+				(e as MouseEvent).metaKey ||
+				(e as MouseEvent).ctrlKey ||
+				(e as MouseEvent).altKey ||
+				(e as MouseEvent).shiftKey
+			)
+				return;
 
-		const target = e.target as HTMLElement;
-		if (!target) return;
+			const anchor = e.currentTarget as HTMLAnchorElement | null;
+			if (!anchor) return;
 
-		const anchor = e.currentTarget as HTMLAnchorElement;
-		if (!anchor) return;
+			// Respect target and download
+			if (anchor.target && anchor.target.toLowerCase() !== "_self") return;
+			if (anchor.hasAttribute("download")) return;
 
-		const href = anchor.href;
-		if (!href) return;
+			const href = anchor.href;
+			if (!href) return;
 
-		if (
-			href === location.pathname + location.search ? `?${location.search}` : ""
-		) {
-			e.preventDefault();
-			return;
-		}
+			// Only same-origin interception
+			const destUrl = new URL(href, location.href);
+			if (destUrl.origin !== location.origin) return;
 
-		e.preventDefault();
-
-		const routeManifest: Manifest = JSON.parse(
-			document.getElementById("manifest")?.textContent || "{}",
-		);
-
-		const root = document.getElementById("root");
-
-		for (const route of Object.values(routeManifest)) {
-			if (route.type === "asset") continue;
-
-			const pattern = new URLPattern({
-				pathname: route.pathPattern as string,
-				baseURL: location.origin,
-			});
-
-			const match = pattern.exec(href, location.origin);
-
-			if (match && root) {
-				navigate(href);
+			// If navigating to the exact same URL (including search/hash), do nothing
+			const currentUrl = new URL(location.href);
+			if (destUrl.href === currentUrl.href) {
+				e.preventDefault();
+				return;
 			}
-		}
-	}, []);
+
+			// Intercept
+			e.preventDefault();
+
+			const routeManifest: Manifest = JSON.parse(
+				document.getElementById("manifest")?.textContent || "{}",
+			);
+
+			for (const route of Object.values(routeManifest)) {
+				if (route.type === "asset") continue;
+
+				const pattern = new URLPattern({
+					pathname: route.pathPattern as string,
+					baseURL: location.origin,
+				});
+
+				const match = pattern.exec(destUrl.href, location.origin);
+
+				if (match) {
+					navigate(destUrl.href);
+					// Important: avoid multiple navigations if multiple routes match
+					break;
+				}
+			}
+		},
+		[navigate],
+	);
 
 	return {
 		navigate,

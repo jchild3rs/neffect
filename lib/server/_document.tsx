@@ -24,7 +24,7 @@ export interface ProvidedDocumentProps {
 
 export function DocumentHead(
 	props: PropsWithChildren<{
-		routeCssEntry?: ManifestChunk;
+		routeCssEntry?: ManifestChunk | undefined;
 	}>,
 ) {
 	return (

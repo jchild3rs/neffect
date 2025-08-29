@@ -2,6 +2,13 @@ import { signal } from "@preact/signals";
 import type { FunctionComponent, PropsWithChildren } from "react";
 import { hydrate } from "react";
 
+declare global {
+	interface Window {
+		__hasProvidedApp: boolean;
+		__loadCache: Record<string, unknown>;
+	}
+}
+
 async function mount() {
 	if (!("URLPattern" in globalThis)) {
 		await import("urlpattern-polyfill");
@@ -52,13 +59,7 @@ async function mount() {
 			);
 		} else {
 			hydrate(
-				<BaseApp
-					routeContext={{
-						...routeData.routeContext,
-						params: signal(routeData.routeContext.params),
-						query: signal(routeData.routeContext.query),
-					}}
-				>
+				<BaseApp routeContext={routeContext}>
 					<Page
 						data={routeLoadData}
 						query={routeData.routeContext.query}

@@ -10,7 +10,7 @@ import { loadModule } from "../server/load-module.ts";
 interface BundleResult {
 	path: string;
 	size: string;
-	compressed?: string;
+	compressed?: string | undefined;
 }
 
 export const main = Effect.gen(function* () {
@@ -20,6 +20,14 @@ export const main = Effect.gen(function* () {
 
 	const configs = definePluginConfig(
 		Option.getOrUndefined(providedBuildConfig),
+	);
+
+	yield* Effect.all(
+		["dist/server", "dist/client"].map((path) =>
+			fs.makeDirectory(`${process.cwd()}/${path}`, {
+				recursive: true,
+			}),
+		),
 	);
 
 	const builds = yield* Effect.all(

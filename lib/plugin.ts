@@ -3,16 +3,13 @@ import {
 	existsSync,
 	globSync,
 	mkdirSync,
-	rmSync,
 	writeFileSync,
 } from "node:fs";
 import { zstdCompressSync } from "node:zlib";
-import { transform } from "lightningcss";
+import postcss, { type AcceptedPlugin } from "postcss";
 import type { Plugin, RolldownOptions } from "rolldown";
 import esbuild from "rollup-plugin-esbuild";
 import type { Manifest } from "./types.ts";
-
-const isProduction = process.env.NODE_ENV === "production";
 
 export interface BuildConfig {
 	/**
@@ -57,35 +54,57 @@ export interface BuildConfig {
 	 * ```
 	 */
 	assetBaseUrl?: string;
+
+	/**
+	 * PostCSS plugin list
+	 *
+	 * @since 0.1.0
+	 */
+	postcssPlugins?: AcceptedPlugin[];
 }
 
-const cssMinifyPlugin: Plugin = {
-	name: "css-minify",
+const postcssPlugin = (
+	minify?: boolean,
+	providedPlugins: AcceptedPlugin[] = [],
+): Plugin => ({
+	name: "postcss",
 	async writeBundle(options, bundle) {
 		for (const [id, entry] of Object.entries(bundle)) {
 			if (entry.type === "asset" && id.endsWith(".css")) {
-				const result = transform({
-					filename: id,
-					code: Buffer.from(entry.source),
-					minify: true,
+				const path = `${options.dir}/${id}`;
+
+				// const wtf = await import("@tailwindcss/postcss").then(
+				// 	(mod) => mod.default,
+				// );
+				// console.log({ wtf });
+				const plugins: AcceptedPlugin[] = [
+					...providedPlugins,
+					await import("@tailwindcss/postcss").then((mod) => mod.default()),
+					...(minify
+						? [
+								await import("cssnano").then((mod) =>
+									mod.default({ preset: "default" }),
+								),
+							]
+						: []),
+				];
+				console.log({ plugins });
+
+				const result = await postcss(plugins).process(entry.source.toString(), {
+					from: path,
+					to: path,
 				});
-				writeFileSync(`${options.dir}/${id}`, result.code);
+				writeFileSync(path, result.css);
 			}
 		}
 	},
-};
+});
 
 const manifestPlugin: Plugin = {
 	name: "write-manifest-json",
 	generateBundle(options, bundle) {
 		const manifest: Manifest = {};
 		const outDir = `${process.cwd()}/${options.dir ?? "dist"}`;
-
-		if (existsSync(outDir)) {
-			rmSync(outDir, { recursive: true, force: true });
-		}
-
-		mkdirSync(outDir, { recursive: true });
 
 		for (const [_key, entry] of Object.entries(bundle)) {
 			manifest[entry.fileName] = {
@@ -102,9 +121,11 @@ const manifestPlugin: Plugin = {
 const copyPublicFolder: Plugin = {
 	name: "copy-public-folder",
 	writeBundle() {
-		cpSync(`${process.cwd()}/public`, `${process.cwd()}/dist/client/public`, {
-			recursive: true,
-		});
+		if (existsSync(`${process.cwd()}/public`)) {
+			cpSync(`${process.cwd()}/public`, `${process.cwd()}/dist/client/public`, {
+				recursive: true,
+			});
+		}
 	},
 };
 
@@ -114,18 +135,7 @@ const gzipPlugin: Plugin = {
 		for (const [fileName, file] of Object.entries(bundle)) {
 			if (fileName.endsWith(".json")) continue;
 			const source = file.type === "asset" ? file.source : file.code;
-			// zStandard level 12
-			// const compressed = gzipSync(source, { level: 9 });
-			const compressed = zstdCompressSync(source, {});
-			// const stream = createZstdCompress({
-			// 	params: {
-			// 		[zlib.constants.ZSTD_c_strategy]: zlib.constants.ZSTD_btultra,
-			// 	},
-			// });
-			//
-			// stream.write(source);
-			// stream.end();
-			//
+			const compressed = zstdCompressSync(Buffer.from(source));
 
 			const path = `${options.dir}/compressed/${fileName}`;
 			const pathWithoutFile = path.split("/").slice(0, -1).join("/");
@@ -138,9 +148,11 @@ const gzipPlugin: Plugin = {
 export function definePluginConfig(
 	config?: BuildConfig | null,
 ): RolldownOptions[] {
-	const routePaths = globSync(["src/pages/**/*.tsx", "src/pages/**/*.tsx"], {
+	const routePaths = globSync(["src/pages/**/*.tsx"], {
 		cwd: process.cwd(),
 	});
+
+	const rolldownOptions = config?.rolldownOptions ?? {};
 
 	const routeEntries = routePaths.reduce<Record<string, string>>(
 		(acc, path) => {
@@ -172,6 +184,7 @@ export function definePluginConfig(
 	}, {});
 
 	const sharedOptions = {
+		...rolldownOptions,
 		input: {
 			"base/_app": "neffect/app",
 			"base/_document": "neffect/document",
@@ -179,13 +192,15 @@ export function definePluginConfig(
 		cwd: process.cwd(),
 		plugins: [manifestPlugin, esbuild({ loaders: { svg: "dataurl" } })],
 		resolve: {
+			...rolldownOptions?.resolve,
 			alias: {
+				...rolldownOptions?.resolve?.alias,
 				react: "preact/compat",
 				"react-dom/test-utils": "preact/test-utils",
 				"react-dom": "preact/compat",
 				"react/jsx-runtime": "preact/jsx-runtime",
 				"neffect/link": `${process.cwd()}/lib/router/link.tsx`,
-				"neffect/server": `${process.cwd()}/lib/router/server.ts`,
+				"neffect/server": `${process.cwd()}/lib/server/server.ts`,
 				"neffect/use-*": `${process.cwd()}/lib/router/use-*.ts`,
 				"neffect/document": `${process.cwd()}/lib/server/_document.tsx`,
 				"neffect/app": `${process.cwd()}/lib/server/_app.tsx`,
@@ -193,6 +208,7 @@ export function definePluginConfig(
 			},
 		},
 		transform: {
+			...rolldownOptions?.transform,
 			jsx: {
 				runtime: "automatic",
 				importSource: "preact",
@@ -224,8 +240,8 @@ export function definePluginConfig(
 			platform: "browser",
 			plugins: [
 				...sharedOptions.plugins,
-				...(isProduction || config?.minifyCss ? [cssMinifyPlugin] : []),
 				...(config?.compress ? [gzipPlugin] : [undefined]),
+				postcssPlugin(config?.minifyCss, config?.postcssPlugins),
 				copyPublicFolder,
 			],
 		},
@@ -243,10 +259,6 @@ export function definePluginConfig(
 			platform: "node",
 		},
 	];
-
-	if (config?.rolldownOptions) {
-		options.push(config.rolldownOptions);
-	}
 
 	return options;
 }
