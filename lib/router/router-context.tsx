@@ -14,6 +14,7 @@ export function RouterProvider({
 	value,
 }: PropsWithChildren<{ value: RouterContext }>) {
 	useEffect(() => {
+		// we _want_ to replace the handler here...
 		window.onpopstate = (e: PopStateEvent) => {
 			void handleRouteChange(value, e.state);
 		};

@@ -1,4 +1,4 @@
-import type { ProvidedDocumentProps } from "../lib/server/_document.tsx";
+import type { ProvidedDocumentProps } from "neffect/document";
 
 export default function Document(props: ProvidedDocumentProps) {
 	return (

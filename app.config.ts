@@ -1,4 +1,4 @@
-import type { BuildConfig } from "./src/lib/plugin/rolldown";
+import type { BuildConfig } from "./lib/plugin.ts";
 
 const config: BuildConfig = {
 	minifyCss: true,

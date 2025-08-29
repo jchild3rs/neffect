@@ -1,7 +1,7 @@
 import { useCallback, useContext } from "react";
 import type { Manifest } from "../types.ts";
 import { routeLoading } from "./route-store.ts";
-import { RouterContext } from "./router-context.ts";
+import { RouterContext } from "./router-context.tsx";
 
 export function useNavigation() {
 	const routeContext = useContext(RouterContext);

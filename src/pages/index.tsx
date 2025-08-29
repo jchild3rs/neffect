@@ -1,7 +1,7 @@
 import "./index.css";
+import { Link } from "neffect/link";
 import LogoSrc from "../assets/preact-logo.svg";
 import Counter from "../components/counter.tsx";
-import { Link } from "../lib/router/link.tsx";
 import type { PageData } from "./index.data.ts";
 
 export default function Page(props: { data: PageData }) {

@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactElement } from "react";
-import type { RouterContext } from "../router/router-context.ts";
+import type { RouterContext } from "../router/router-context.tsx";
 import type { Manifest, ManifestChunk } from "../types.ts";
 import type { ImportMapJSON } from "./import-map.ts";
 

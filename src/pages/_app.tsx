@@ -1,5 +1,5 @@
+import { Link } from "neffect/link";
 import type { PropsWithChildren } from "react";
-import { Link } from "../lib/router/link.tsx";
 
 export default function App(props: PropsWithChildren) {
 	return (

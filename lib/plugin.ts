@@ -10,7 +10,7 @@ import { zstdCompressSync } from "node:zlib";
 import { transform } from "lightningcss";
 import type { Plugin, RolldownOptions } from "rolldown";
 import esbuild from "rollup-plugin-esbuild";
-import type { Manifest } from "../types.ts";
+import type { Manifest } from "./types.ts";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -127,8 +127,6 @@ const gzipPlugin: Plugin = {
 			// stream.end();
 			//
 
-			// console.log("WTTFF")
-
 			const path = `${options.dir}/compressed/${fileName}`;
 			const pathWithoutFile = path.split("/").slice(0, -1).join("/");
 			mkdirSync(pathWithoutFile, { recursive: true });
@@ -137,7 +135,9 @@ const gzipPlugin: Plugin = {
 	},
 };
 
-export function defineConfig(config?: BuildConfig | null): RolldownOptions[] {
+export function definePluginConfig(
+	config?: BuildConfig | null,
+): RolldownOptions[] {
 	const routePaths = globSync(["src/pages/**/*.tsx", "src/pages/**/*.tsx"], {
 		cwd: process.cwd(),
 	});
@@ -173,8 +173,8 @@ export function defineConfig(config?: BuildConfig | null): RolldownOptions[] {
 
 	const sharedOptions = {
 		input: {
-			"base/_app": "src/lib/server/_app.tsx",
-			"base/_document": "src/lib/server/_document.tsx",
+			"base/_app": "neffect/app",
+			"base/_document": "neffect/document",
 		},
 		cwd: process.cwd(),
 		plugins: [manifestPlugin, esbuild({ loaders: { svg: "dataurl" } })],
@@ -184,6 +184,12 @@ export function defineConfig(config?: BuildConfig | null): RolldownOptions[] {
 				"react-dom/test-utils": "preact/test-utils",
 				"react-dom": "preact/compat",
 				"react/jsx-runtime": "preact/jsx-runtime",
+				"neffect/link": `${process.cwd()}/lib/router/link.tsx`,
+				"neffect/server": `${process.cwd()}/lib/router/server.ts`,
+				"neffect/use-*": `${process.cwd()}/lib/router/use-*.ts`,
+				"neffect/document": `${process.cwd()}/lib/server/_document.tsx`,
+				"neffect/app": `${process.cwd()}/lib/server/_app.tsx`,
+				"neffect/server/$(.*)": `${process.cwd()}/lib/server/$1.ts`,
 			},
 		},
 		transform: {
@@ -206,7 +212,7 @@ export function defineConfig(config?: BuildConfig | null): RolldownOptions[] {
 				strictExecutionOrder: true,
 			},
 			input: {
-				main: "src/lib/entry-client.tsx",
+				main: "lib/entry-client.tsx",
 				styles: "src/styles.css",
 				...cssEntries,
 				...routeEntries,
@@ -226,7 +232,7 @@ export function defineConfig(config?: BuildConfig | null): RolldownOptions[] {
 		{
 			...sharedOptions,
 			input: {
-				main: "src/lib/entry-server.tsx",
+				main: "lib/entry-server.tsx",
 				...routeEntries,
 				...routeLoadEntries,
 				...sharedOptions.input,
@@ -241,8 +247,6 @@ export function defineConfig(config?: BuildConfig | null): RolldownOptions[] {
 	if (config?.rolldownOptions) {
 		options.push(config.rolldownOptions);
 	}
-
-	console.log(options);
 
 	return options;
 }

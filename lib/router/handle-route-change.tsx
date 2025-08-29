@@ -2,7 +2,7 @@ import { render } from "preact/compat";
 import type { FunctionComponent, PropsWithChildren } from "react";
 import type { Manifest } from "../types.ts";
 import { routeLoading } from "./route-store.ts";
-import type { RouterContext } from "./router-context.ts";
+import type { RouterContext } from "./router-context.tsx";
 
 export async function handleRouteChange(
 	routeContext: RouterContext,

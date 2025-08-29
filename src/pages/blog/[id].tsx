@@ -1,6 +1,6 @@
 import "./[id].css";
+import { useNavigation } from "neffect/use-navigation";
 import Counter from "../../components/counter.tsx";
-import { useNavigation } from "../../lib/router/use-navigation.ts";
 import type { PageData } from "./[id].data.ts";
 
 export default function Page({

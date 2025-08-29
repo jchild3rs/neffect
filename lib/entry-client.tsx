@@ -1,9 +1,6 @@
-import "preact/debug";
 import { signal } from "@preact/signals";
-import { hydrate } from "preact/compat";
 import type { FunctionComponent, PropsWithChildren } from "react";
-
-// import App from "./server/_app.tsx";
+import { hydrate } from "react";
 
 async function mount() {
 	if (!("URLPattern" in globalThis)) {

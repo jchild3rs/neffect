@@ -4,10 +4,10 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"build": "node  scripts/build.ts",
+		"build": "node ./lib/scripts/build.ts",
 		"check": "tsc && biome check --write",
-		"dev": "node  scripts/dev.ts",
-		"start": "node scripts/start.ts"
+		"dev": "node ./lib/scripts/dev.ts",
+		"start": "node ./lib/scripts/start.ts"
 	},
 	"dependencies": {
 		"@effect/cli": "^0.69.2",

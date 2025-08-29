@@ -6,10 +6,6 @@
 		"module": "ESNext",
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"skipLibCheck": true,
-		"paths": {
-			"react": ["./node_modules/preact/compat/"],
-			"react-dom": ["./node_modules/preact/compat/"]
-		},
 
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
@@ -18,6 +14,20 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 		"jsxImportSource": "preact",
+		"baseUrl": "./",
+		"paths": {
+			"react": ["./node_modules/preact/compat/"],
+			"react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+			"react-dom": ["./node_modules/preact/compat/"],
+			"react-dom/*": ["./node_modules/preact/compat/*"],
+			"neffect/link": ["./lib/router/link.tsx"],
+			"neffect/use-*": ["./lib/router/use-*.ts"],
+			"neffect/server": ["./lib/server/server.ts"],
+			"neffect/document": ["./lib/server/_document.tsx"],
+			"neffect/app": ["./lib/server/_app.tsx"],
+			"neffect/server/*": ["./lib/server/*.ts"],
+			"neffect/plugin": ["./lib/plugin.ts"]
+		},
 
 		"strict": true,
 		"noUnusedLocals": true,

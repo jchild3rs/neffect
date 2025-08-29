@@ -5,7 +5,7 @@ import { NodeHttpClient } from "@effect/platform-node";
 import { signal } from "@preact/signals";
 import { Chunk, Data, Effect, Stream } from "effect";
 import { renderToReadableStream } from "preact-render-to-string/stream";
-import type { RouterContext } from "./router/router-context.ts";
+import type { RouterContext } from "./router/router-context.tsx";
 import { DocumentHead, DocumentScripts } from "./server/_document.tsx";
 import type { ImportMapJSON } from "./server/import-map.ts";
 import type {

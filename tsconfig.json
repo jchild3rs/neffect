@@ -48,7 +48,7 @@
 	},
 	"files": [],
 	"references": [
-		{ "path": "./tsconfig.src.json" },
-		{ "path": "./tsconfig.scripts.json" }
+		{ "path": "./tsconfig.app.json" },
+		{ "path": "./tsconfig.node.json" }
 	]
 }

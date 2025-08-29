@@ -1,12 +1,12 @@
 import { useContext } from "react";
-import { RouterContext } from "./router-context.ts";
+import { RouterContext } from "./router-context.tsx";
 
-export function useParams() {
+export function useQuery() {
 	const context = useContext(RouterContext);
 
 	if (!context) {
 		throw new Error("useRoute must be used within a RouterContext.Provider");
 	}
 
-	return context.params;
+	return context.query;
 }

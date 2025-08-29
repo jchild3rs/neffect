@@ -1,9 +1,11 @@
+#!/usr/bin/env node
+
 import { FileSystem } from "@effect/platform";
 import { NodeContext, NodeRuntime } from "@effect/platform-node";
 import { Effect, Option } from "effect";
 import { type RolldownBuild, type RolldownOptions, rolldown } from "rolldown";
-import { type BuildConfig, defineConfig } from "../src/lib/plugin/rolldown.ts";
-import { loadModule } from "../src/lib/server/load-module.ts";
+import { type BuildConfig, definePluginConfig } from "../plugin.ts";
+import { loadModule } from "../server/load-module.ts";
 
 interface BundleResult {
 	path: string;
@@ -15,7 +17,10 @@ export const main = Effect.gen(function* () {
 	yield* Effect.logInfo("Building...");
 	const fs = yield* FileSystem.FileSystem;
 	const providedBuildConfig = yield* loadModule<BuildConfig>("/app.config.ts");
-	const configs = defineConfig(Option.getOrUndefined(providedBuildConfig));
+
+	const configs = definePluginConfig(
+		Option.getOrUndefined(providedBuildConfig),
+	);
 
 	const builds = yield* Effect.all(
 		configs.map((config) =>
