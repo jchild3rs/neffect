@@ -13,7 +13,7 @@ interface BundleResult {
 	compressed?: string | undefined;
 }
 
-export const main = Effect.gen(function* () {
+export const build = Effect.gen(function* () {
 	yield* Effect.logInfo("Building...");
 	const fs = yield* FileSystem.FileSystem;
 	const providedBuildConfig = yield* loadModule<BuildConfig>("/app.config.ts");
@@ -110,14 +110,16 @@ export const main = Effect.gen(function* () {
 		});
 	}
 
-	yield* Effect.logInfo(
-		`Client result: ${totalJsSize.toFixed(2)}kb ${totalJsSizeCompressed ? `(compressed: ${totalJsSizeCompressed.toFixed(2)}kb)` : ""}`,
-	);
-	console.table(
-		clientResults.sort(
-			(a, b) => Number.parseFloat(b.size) - Number.parseFloat(a.size),
-		),
-	);
+	if (import.meta.main) {
+		yield* Effect.logInfo(
+			`Client result: ${totalJsSize.toFixed(2)}kb ${totalJsSizeCompressed ? `(compressed: ${totalJsSizeCompressed.toFixed(2)}kb)` : ""}`,
+		);
+		console.table(
+			clientResults.sort(
+				(a, b) => Number.parseFloat(b.size) - Number.parseFloat(a.size),
+			),
+		);
+	}
 
 	const serverResults: BundleResult[] = [];
 
@@ -139,15 +141,19 @@ export const main = Effect.gen(function* () {
 		});
 	}
 
-	yield* Effect.logInfo("Server result:");
+	if (import.meta.main) {
+		yield* Effect.logInfo("Server result:");
 
-	console.table(
-		serverResults.sort(
-			(a, b) => Number.parseFloat(b.size) - Number.parseFloat(a.size),
-		),
-	);
+		console.table(
+			serverResults.sort(
+				(a, b) => Number.parseFloat(b.size) - Number.parseFloat(a.size),
+			),
+		);
+	}
 
 	yield* Effect.logInfo("Build complete.");
-}).pipe(Effect.provide(NodeContext.layer));
+});
 
-NodeRuntime.runMain(main);
+if (import.meta.main) {
+	NodeRuntime.runMain(build.pipe(Effect.provide(NodeContext.layer)));
+}

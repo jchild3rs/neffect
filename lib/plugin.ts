@@ -4,12 +4,12 @@ import {
 	globSync,
 	mkdirSync,
 	writeFileSync,
-} from "node:fs";
-import { zstdCompressSync } from "node:zlib";
-import postcss, { type AcceptedPlugin } from "postcss";
-import type { Plugin, RolldownOptions } from "rolldown";
-import esbuild from "rollup-plugin-esbuild";
-import type { Manifest } from "./types.ts";
+} from 'node:fs';
+import { zstdCompressSync } from 'node:zlib';
+import postcss, { type AcceptedPlugin } from 'postcss';
+import type { Plugin, RolldownOptions } from 'rolldown';
+import esbuild from 'rollup-plugin-esbuild';
+import type { Manifest } from './types.ts';
 
 export interface BuildConfig {
 	/**
@@ -73,10 +73,6 @@ const postcssPlugin = (
 			if (entry.type === "asset" && id.endsWith(".css")) {
 				const path = `${options.dir}/${id}`;
 
-				// const wtf = await import("@tailwindcss/postcss").then(
-				// 	(mod) => mod.default,
-				// );
-				// console.log({ wtf });
 				const plugins: AcceptedPlugin[] = [
 					...providedPlugins,
 					await import("@tailwindcss/postcss").then((mod) => mod.default()),
@@ -88,7 +84,6 @@ const postcssPlugin = (
 							]
 						: []),
 				];
-				console.log({ plugins });
 
 				const result = await postcss(plugins).process(entry.source.toString(), {
 					from: path,
@@ -216,7 +211,7 @@ export function definePluginConfig(
 		},
 	} satisfies RolldownOptions;
 
-	const options: RolldownOptions[] = [
+	return [
 		{
 			...sharedOptions,
 			experimental: {
@@ -259,6 +254,4 @@ export function definePluginConfig(
 			platform: "node",
 		},
 	];
-
-	return options;
 }
