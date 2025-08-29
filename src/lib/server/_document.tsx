@@ -67,6 +67,7 @@ export function DocumentScripts(props: DocumentProps) {
 	return (
 		<>
 			<script
+				nonce={props.nonce}
 				type="application/json"
 				id="route-data"
 				dangerouslySetInnerHTML={{
@@ -81,6 +82,7 @@ export function DocumentScripts(props: DocumentProps) {
 			></script>
 
 			<script
+				nonce={props.nonce}
 				type="application/json"
 				id="manifest"
 				dangerouslySetInnerHTML={{
@@ -89,6 +91,7 @@ export function DocumentScripts(props: DocumentProps) {
 			></script>
 
 			<script
+				nonce={props.nonce}
 				type="application/json"
 				id="load-result"
 				dangerouslySetInnerHTML={{
@@ -97,13 +100,15 @@ export function DocumentScripts(props: DocumentProps) {
 			></script>
 
 			<script
+				nonce={props.nonce}
 				type="importmap"
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(props.importMap) }}
 			></script>
 
-			<script type="module" src="/_assets/main.js"></script>
+			<script nonce={props.nonce} type="module" src="/_assets/main.js"></script>
 
 			<script
+				nonce={props.nonce}
 				dangerouslySetInnerHTML={{
 					__html: `window.__hasProvidedApp = ${props.hasProvidedApp}`,
 				}}

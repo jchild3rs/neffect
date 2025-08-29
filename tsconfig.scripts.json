@@ -1,23 +1,16 @@
 {
 	"compilerOptions": {
-		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-		"target": "ES2022",
-		"useDefineForClassFields": true,
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.scripts.tsbuildinfo",
+		"target": "ES2023",
+		"lib": ["ES2023"],
 		"module": "ESNext",
-		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"skipLibCheck": true,
-		"paths": {
-			"react": ["./node_modules/preact/compat/"],
-			"react-dom": ["./node_modules/preact/compat/"]
-		},
 
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
 		"verbatimModuleSyntax": true,
 		"moduleDetection": "force",
 		"noEmit": true,
-		"jsx": "react-jsx",
-		"jsxImportSource": "preact",
 
 		"strict": true,
 		"noUnusedLocals": true,
@@ -26,5 +19,5 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedSideEffectImports": true
 	},
-	"include": ["src", "rolldown.config.ts"]
+	"include": ["scripts"]
 }

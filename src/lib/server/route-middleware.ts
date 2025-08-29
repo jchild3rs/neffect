@@ -7,7 +7,6 @@ import { RouteNotFound } from "@effect/platform/HttpServerError";
 import { Effect } from "effect";
 import type { ManifestChunk, RouteDataModule } from "../types.ts";
 import { isProduction } from "./config.ts";
-import { ImportMap } from "./import-map.ts";
 import {
 	ClientManifest,
 	getClientManifest,
@@ -40,7 +39,6 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 		// Helper route for loading route data client side
 		if (request.url.startsWith("/load")) {
 			const modPath = request.url.split("/load")[1];
-			console.log(modPath.replace(".json", ".data.js"));
 			const mod = yield* Effect.promise(
 				() =>
 					import(
@@ -57,13 +55,26 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 			return HttpServerResponse.unsafeJson(data, { headers: responseHeaders });
 		}
 
+		const isProd = yield* isProduction;
 		for (const route of Object.values(routeManifest)) {
 			if (route.type === "asset") continue;
 
 			const match = route.pattern?.exec(request.url);
 			if (match) {
 				const routeHandler = yield* RouteHandler;
-				const importMap = yield* ImportMap;
+				const importMap = yield* Effect.promise(() =>
+					import(
+						`${process.cwd()}/dist/client/importmap.json${
+							isProd
+								? ""
+								: // this is a module cache bust for dev mode
+									`?${Math.random()}`
+						}`,
+						{
+							with: { type: "json" },
+						}
+					).then((mod) => mod.default),
+				);
 
 				const urlSearchParams = new URLSearchParams(
 					request.url.split("?")[1] ?? "",

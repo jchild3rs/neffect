@@ -13,3 +13,7 @@ export const load = () =>
 	});
 
 export type PageData = Effect.Effect.Success<ReturnType<typeof load>>;
+
+export const metadata = (
+	data: Effect.Effect.Success<ReturnType<typeof load>>,
+) => Effect.succeed({ title: data.title });

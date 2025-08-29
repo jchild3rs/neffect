@@ -1,8 +1,9 @@
 import { Effect } from "effect";
 
+const payload = Array.from({ length: 500 }).map(() => Math.random());
+
 export const load = () =>
 	Effect.gen(function* () {
-		const payload = Array.from({ length: 500 }).map(() => Math.random());
 		yield* Effect.promise(
 			() => new Promise((resolve) => setTimeout(resolve, 100)),
 		);

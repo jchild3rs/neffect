@@ -1,11 +1,12 @@
 import {
+	cpSync,
 	existsSync,
 	globSync,
 	mkdirSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
-import { gzipSync } from "node:zlib";
+import { zstdCompressSync } from "node:zlib";
 import { transform } from "lightningcss";
 import type { Plugin, RolldownOptions } from "rolldown";
 import esbuild from "rollup-plugin-esbuild";
@@ -13,7 +14,7 @@ import type { Manifest } from "../types.ts";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-interface BuildConfig {
+export interface BuildConfig {
 	/**
 	 * The global stylesheet to use for all pages
 	 *
@@ -30,11 +31,11 @@ interface BuildConfig {
 	rolldownOptions?: RolldownOptions;
 
 	/**
-	 * Compress and serve the output files with gzip
+	 * Compress and serve the output files with ZStandard
 	 *
 	 * @since 0.1.0
 	 */
-	gzipCompress?: boolean;
+	compress?: boolean;
 
 	/**
 	 * Minify the output of CSS files
@@ -81,7 +82,7 @@ const manifestPlugin: Plugin = {
 		const outDir = `${process.cwd()}/${options.dir ?? "dist"}`;
 
 		if (existsSync(outDir)) {
-			rmSync(outDir, { recursive: true });
+			rmSync(outDir, { recursive: true, force: true });
 		}
 
 		mkdirSync(outDir, { recursive: true });
@@ -98,13 +99,35 @@ const manifestPlugin: Plugin = {
 	},
 };
 
+const copyPublicFolder: Plugin = {
+	name: "copy-public-folder",
+	writeBundle() {
+		cpSync(`${process.cwd()}/public`, `${process.cwd()}/dist/client/public`, {
+			recursive: true,
+		});
+	},
+};
+
 const gzipPlugin: Plugin = {
 	name: "gzip",
 	async writeBundle(options, bundle) {
 		for (const [fileName, file] of Object.entries(bundle)) {
 			if (fileName.endsWith(".json")) continue;
 			const source = file.type === "asset" ? file.source : file.code;
-			const compressed = gzipSync(source, { level: 9 });
+			// zStandard level 12
+			// const compressed = gzipSync(source, { level: 9 });
+			const compressed = zstdCompressSync(source, {});
+			// const stream = createZstdCompress({
+			// 	params: {
+			// 		[zlib.constants.ZSTD_c_strategy]: zlib.constants.ZSTD_btultra,
+			// 	},
+			// });
+			//
+			// stream.write(source);
+			// stream.end();
+			//
+
+			// console.log("WTTFF")
 
 			const path = `${options.dir}/compressed/${fileName}`;
 			const pathWithoutFile = path.split("/").slice(0, -1).join("/");
@@ -114,7 +137,7 @@ const gzipPlugin: Plugin = {
 	},
 };
 
-export function defineConfig(config?: BuildConfig): RolldownOptions[] {
+export function defineConfig(config?: BuildConfig | null): RolldownOptions[] {
 	const routePaths = globSync(["src/pages/**/*.tsx", "src/pages/**/*.tsx"], {
 		cwd: process.cwd(),
 	});
@@ -171,7 +194,6 @@ export function defineConfig(config?: BuildConfig): RolldownOptions[] {
 		},
 	} satisfies RolldownOptions;
 
-	console.log({ routeLoadEntries });
 	const options: RolldownOptions[] = [
 		{
 			...sharedOptions,
@@ -197,7 +219,8 @@ export function defineConfig(config?: BuildConfig): RolldownOptions[] {
 			plugins: [
 				...sharedOptions.plugins,
 				...(isProduction || config?.minifyCss ? [cssMinifyPlugin] : []),
-				...(config?.gzipCompress ? [gzipPlugin] : [undefined]),
+				...(config?.compress ? [gzipPlugin] : [undefined]),
+				copyPublicFolder,
 			],
 		},
 		{
@@ -218,6 +241,8 @@ export function defineConfig(config?: BuildConfig): RolldownOptions[] {
 	if (config?.rolldownOptions) {
 		options.push(config.rolldownOptions);
 	}
+
+	console.log(options);
 
 	return options;
 }

@@ -1,23 +1,23 @@
 {
-	"name": "input-test",
+	"name": "simple-web-framework",
 	"private": true,
 	"version": "0.1.0",
 	"type": "module",
-	"main": "src/lib/server/server.ts",
 	"scripts": {
-		"build": "rolldown -c rolldown.config.ts",
-		"check": "tsc --noEmit && biome check --write",
-		"dev": "npm run build && npm run dev:build & npm run dev:server",
-		"dev:build": "rolldown -w -c rolldown.config.ts",
-		"dev:server": "node --watch-path ./dist --watch .",
-		"format": "biome format --write",
-		"preview": "npm run build && NODE_ENV=production node .",
-		"start": "npm run build && node ."
+		"build": "node  scripts/build.ts",
+		"check": "tsc && biome check --write",
+		"dev": "node  scripts/dev.ts",
+		"start": "node scripts/start.ts"
 	},
 	"dependencies": {
 		"@effect/cli": "^0.69.2",
+		"@effect/opentelemetry": "^0.56.4",
 		"@effect/platform": "^0.90.6",
 		"@effect/platform-node": "^0.96.0",
+		"@opentelemetry/exporter-trace-otlp-http": "^0.203.0",
+		"@opentelemetry/sdk-trace-base": "^2.0.1",
+		"@opentelemetry/sdk-trace-node": "^2.0.1",
+		"@opentelemetry/sdk-trace-web": "^2.0.1",
 		"@preact/signals": "^2.3.1",
 		"effect": "^3.17.9",
 		"preact": "^10.27.0",

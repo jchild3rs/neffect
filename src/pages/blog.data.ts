@@ -15,6 +15,5 @@ export type PageData = Effect.Effect.Success<ReturnType<typeof load>>;
 
 export const metadata = () =>
 	Effect.succeed({
-		title: "Home",
-		description: "Welcome to the Preact App",
+		title: "Blog",
 	});

@@ -29,7 +29,6 @@ const DOCTYPE_HTML_CHUNK = Chunk.of(
 );
 
 const onStreamError = (error: unknown) => {
-	console.log(error);
 	return Effect.fail(new StreamRenderError(error));
 };
 
@@ -67,7 +66,7 @@ export const handle = (
 		};
 
 		if (typeof routeDataModule?.metadata === "function") {
-			metadata = yield* routeDataModule.metadata();
+			metadata = yield* routeDataModule.metadata(data);
 		}
 
 		const pageProps = {
@@ -204,7 +203,7 @@ export const handle = (
 			{
 				contentType: "text/html",
 				headers: {
-					// "Content-Security-Policy": `script-src 'nonce-${nonce}'`,
+					"Content-Security-Policy": `script-src 'nonce-${nonce}'`,
 				},
 			},
 		);

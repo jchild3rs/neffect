@@ -32,17 +32,23 @@ export type Metadata = {
 	ogUrl?: string;
 };
 
-export type RouteModule<LoadData = unknown> = {
-	default: FunctionComponent<{
-		params: Record<string, string | undefined>;
-		query: Record<string, string | string[] | undefined>;
-		data: LoadData;
-	}>;
+type RouteComponent = FunctionComponent<{
+	params: Record<string, string | undefined>;
+	query: Record<string, string | string[] | undefined>;
+	data: Record<string, unknown>;
+}>;
+
+export type RouteModule = {
+	default: RouteComponent;
 };
 
 export type RouteDataModule<
 	LoadData extends Record<string, unknown> = Record<string, unknown>,
 > = {
 	load?: () => Effect.Effect<LoadData, never, never>;
-	metadata?: () => Effect.Effect<Metadata, never, never>;
+	metadata?: (
+		data: Effect.Effect.Success<
+			ReturnType<NonNullable<RouteDataModule<LoadData>["load"]>>
+		>,
+	) => Effect.Effect<Metadata, never, never>;
 };
