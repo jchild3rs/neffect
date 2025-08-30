@@ -32,7 +32,7 @@ export type Metadata = {
 	ogUrl?: string;
 };
 
-type RouteComponent = FunctionComponent<{
+export type RouteComponent = FunctionComponent<{
 	params: Record<string, string | undefined>;
 	query: Record<string, string | string[] | undefined>;
 	data: Record<string, unknown>;

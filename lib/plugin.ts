@@ -4,12 +4,12 @@ import {
 	globSync,
 	mkdirSync,
 	writeFileSync,
-} from 'node:fs';
-import { zstdCompressSync } from 'node:zlib';
-import postcss, { type AcceptedPlugin } from 'postcss';
-import type { Plugin, RolldownOptions } from 'rolldown';
-import esbuild from 'rollup-plugin-esbuild';
-import type { Manifest } from './types.ts';
+} from "node:fs";
+import { zstdCompressSync } from "node:zlib";
+import postcss, { type AcceptedPlugin } from "postcss";
+import type { Plugin, RolldownOptions } from "rolldown";
+import esbuild from "rollup-plugin-esbuild";
+import type { Manifest } from "./types.ts";
 
 export interface BuildConfig {
 	/**
@@ -63,36 +63,69 @@ export interface BuildConfig {
 	postcssPlugins?: AcceptedPlugin[];
 }
 
+const tailwindPlugin = await import("@tailwindcss/postcss").then(
+	(mod) => mod.default,
+);
+
 const postcssPlugin = (
 	minify?: boolean,
 	providedPlugins: AcceptedPlugin[] = [],
 ): Plugin => ({
 	name: "postcss",
-	async writeBundle(options, bundle) {
-		for (const [id, entry] of Object.entries(bundle)) {
-			if (entry.type === "asset" && id.endsWith(".css")) {
-				const path = `${options.dir}/${id}`;
+	async transform(code, id) {
+		if (id.endsWith(".css")) {
+			const path = `${process.cwd()}/dist/client${id}`;
+			const result = await postcss([
+				...providedPlugins,
+				tailwindPlugin({
+					base: `${process.cwd()}/src`,
+					optimize: {
+						minify: Boolean(minify),
+					},
+				}),
+			]).process(code, {
+				from: path,
+				to: path,
+			});
 
-				const plugins: AcceptedPlugin[] = [
-					...providedPlugins,
-					await import("@tailwindcss/postcss").then((mod) => mod.default()),
-					...(minify
-						? [
-								await import("cssnano").then((mod) =>
-									mod.default({ preset: "default" }),
-								),
-							]
-						: []),
-				];
-
-				const result = await postcss(plugins).process(entry.source.toString(), {
-					from: path,
-					to: path,
-				});
-				writeFileSync(path, result.css);
+			if (result) {
+				return result.css;
+				// output
+				// writeFileSync(path, result.css);
 			}
 		}
+
+		return code;
 	},
+	// async writeBundle(options, bundle) {
+	// 	const tailwindPlugin = await import("@tailwindcss/postcss").then((mod) => mod.default)
+	//
+	// 	for (const [id, entry] of Object.entries(bundle)) {
+	// 		if (entry.type === "asset" && id.endsWith(".css")) {
+	// 			const path = `${options.dir}/${id}`;
+	// 			console.log({path})
+	//
+	// 			const result = await postcss([
+	// 				...providedPlugins,
+	// 				tailwindPlugin({
+	// 					base: `${process.cwd()}/src`,
+	// 					optimize: {
+	// 						minify: Boolean(minify)
+	// 					}
+	// 				})
+	// 			]).process(entry.source.toString(), {
+	// 				from: path,
+	// 				to: path,
+	// 			}).catch((error) => {
+	// 				console.log({ error })
+	// 			});
+	//
+	// 			if  (result) {
+	// 				writeFileSync(path, result.css);
+	// 			}
+	// 		}
+	// 	}
+	// },
 });
 
 const manifestPlugin: Plugin = {
@@ -235,8 +268,8 @@ export function definePluginConfig(
 			platform: "browser",
 			plugins: [
 				...sharedOptions.plugins,
-				...(config?.compress ? [gzipPlugin] : [undefined]),
 				postcssPlugin(config?.minifyCss, config?.postcssPlugins),
+				...(config?.compress ? [gzipPlugin] : [undefined]),
 				copyPublicFolder,
 			],
 		},

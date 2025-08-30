@@ -97,14 +97,14 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 					`${route.name}.css`
 				] as ManifestChunk;
 
-				return yield* routeHandler(
+				return yield* routeHandler({
 					routeCssEntry,
 					routeManifest,
 					importMap,
 					route,
 					params,
 					query,
-				);
+				});
 			}
 		}
 

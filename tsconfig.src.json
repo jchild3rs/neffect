@@ -1,0 +1,21 @@
+{
+	"extends": "./tsconfig.shared.json",
+	"compilerOptions": {
+		"tsBuildInfoFile": "./node_modules/.tmp/src.tsconfig.tsbuildinfo",
+		"baseUrl": "./",
+		"paths": {
+			"react": ["./node_modules/preact/compat/"],
+			"react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+			"react-dom": ["./node_modules/preact/compat/"],
+			"react-dom/*": ["./node_modules/preact/compat/*"],
+			"neffect/link": ["./lib/router/link.tsx"],
+			"neffect/use-*": ["./lib/router/use-*.ts"],
+			"neffect/server": ["./lib/server/server.ts"],
+			"neffect/document": ["./lib/server/_document.tsx"],
+			"neffect/app": ["./lib/server/_app.tsx"],
+			"neffect/server/*": ["./lib/server/*.ts"],
+			"neffect/plugin": ["./lib/plugin.ts"]
+		}
+	},
+	"include": ["src", "app.config.ts"]
+}

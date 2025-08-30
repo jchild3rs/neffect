@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import {
+	FileSystem,
 	HttpMiddleware,
 	HttpRouter,
 	HttpServer,
@@ -32,10 +33,34 @@ const router = HttpRouter.empty.pipe(
 	RouteMiddleware,
 	HttpMiddleware.xForwardedHeaders,
 	Effect.catchTags({
-		RouteNotFound: () => HttpServerResponse.text("Not found", { status: 404 }),
+		RouteNotFound: () =>
+			Effect.gen(function* () {
+				const fs = yield* FileSystem.FileSystem;
+				const html = yield* fs.readFileString(
+					`${process.cwd()}/src/pages/404.html`,
+				);
+
+				return HttpServerResponse.text(html, {
+					contentType: "text/html",
+					status: 404,
+				});
+			}),
 	}),
 	Effect.catchAllCause((cause) => {
-		return HttpServerResponse.text(cause.toString(), { status: 500 });
+		return Effect.gen(function* () {
+			const fs = yield* FileSystem.FileSystem;
+			let html = yield* fs.readFileString(
+				`${process.cwd()}/src/pages/500.html`,
+			);
+
+			// todo if is dev...
+			html = html.replace("<!--stack-->", cause.toString());
+
+			return HttpServerResponse.text(html, {
+				contentType: "text/html",
+				status: 500,
+			});
+		});
 	}),
 	HttpServer.serve(),
 	HttpServer.withLogAddress,

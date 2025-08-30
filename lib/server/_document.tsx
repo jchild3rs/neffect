@@ -1,4 +1,4 @@
-import type { PropsWithChildren, ReactElement } from "react";
+import type { FunctionComponent, PropsWithChildren, ReactElement } from "react";
 import type { RouterContext } from "../router/router-context.tsx";
 import type { Manifest, ManifestChunk } from "../types.ts";
 import type { ImportMapJSON } from "./import-map.ts";
@@ -11,16 +11,18 @@ export interface DocumentProps {
 	routeContext: RouterContext;
 	head: ReactElement | null;
 	body: ReactElement | null;
+	scripts: ReactElement | null;
 	importMap: ImportMapJSON;
 	nonce: string;
 	hasProvidedApp: boolean;
 }
 
-export interface ProvidedDocumentProps {
-	head: ReactElement | null;
-	body: ReactElement | null;
-	scripts: ReactElement | null;
-}
+export type DocumentComponent = FunctionComponent<DocumentProps>;
+
+export type ProvidedDocumentProps = Pick<
+	DocumentProps,
+	"head" | "body" | "scripts"
+>;
 
 export function DocumentHead(
 	props: PropsWithChildren<{
@@ -63,7 +65,9 @@ export default function Document(props: DocumentProps) {
 	);
 }
 
-export function DocumentScripts(props: DocumentProps) {
+export function DocumentScripts(
+	props: Omit<DocumentProps, "scripts" | "head" | "body">,
+) {
 	return (
 		<>
 			<script
