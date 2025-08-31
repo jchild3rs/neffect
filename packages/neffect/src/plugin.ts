@@ -4,175 +4,18 @@ import {
 	globSync,
 	mkdirSync,
 	writeFileSync,
-} from "node:fs";
-import { zstdCompressSync } from "node:zlib";
-import postcss, { type AcceptedPlugin } from "postcss";
-import type { Plugin, RolldownOptions } from "rolldown";
-import esbuild from "rollup-plugin-esbuild";
+} from 'node:fs';
+import { zstdCompressSync } from 'node:zlib';
+import postcss, { type AcceptedPlugin } from 'postcss';
+import type { Plugin, RolldownOptions } from 'rolldown';
+import esbuild from 'rollup-plugin-esbuild';
 import {
 	assetBaseUrlFallback,
 	outDirFallback,
 	publicDirFallback,
 	routeDirFallback,
-} from "./app-config.ts";
-import type { Manifest } from "./types.ts";
-
-export interface BuildConfig {
-	/**
-	 * The base URL to use for serving static assets
-	 *
-	 * @since 0.1.0
-	 * @default /_assets/
-	 * @example
-	 * ```ts
-	 * defineConfig({
-	 *   assetBaseUrl: "https://cdn.example.com/assets/"
-	 * })
-	 * ```
-	 */
-	assetBaseUrl?: `${"/" | `${string}://`}${string}/`;
-
-	/**
-	 * Compress and serve the output files with ZStandard
-	 *
-	 * @since 0.1.0
-	 */
-	compress?: boolean;
-
-	/**
-	 * The global stylesheet to use for all pages
-	 *
-	 * @default "styles.css"
-	 * @since 0.1.0
-	 */
-	globalStylesheet?: `${string}.css`;
-
-	/**
-	 * Minify the output of CSS files
-	 *
-	 * @since 0.1.0
-	 */
-	minifyCss?: boolean;
-
-	/**
-	 * Output directory for the build
-	 *
-	 * @default "build"
-	 * @since 0.1.0
-	 */
-	outDir?: string;
-
-	/**
-	 * PostCSS plugin list
-	 *
-	 * @since 0.1.0
-	 */
-	postcssPlugins?: AcceptedPlugin[];
-
-	/**
-	 * @default "public"
-	 * @since 0.1.0
-	 */
-	publicDir?: string;
-
-	/**
-	 * Additional build options (rolldown)
-	 *
-	 * @since 0.1.0
-	 */
-	rolldownOptions?: RolldownOptions;
-
-	/**
-	 * @default "src"
-	 * @since 0.1.0
-	 */
-	rootDir?: string;
-
-	/**
-	 * Output directory for the build
-	 *
-	 * @default "pages"
-	 * @since 0.1.0
-	 */
-	routeDir?: string;
-}
-
-const postcssPlugin = (
-	outDir: string,
-	_minify?: boolean,
-	providedPlugins: AcceptedPlugin[] = [],
-): Plugin => ({
-	name: "postcss",
-	async transform(code, id) {
-		if (id.endsWith(".css")) {
-			const path = `${process.cwd()}/${outDir}/client${id}`;
-			const result = await postcss([...providedPlugins]).process(code, {
-				from: path,
-				to: path,
-			});
-
-			if (result) {
-				return result.css;
-			}
-		}
-
-		return code;
-	},
-});
-
-const manifestPlugin: Plugin = {
-	name: "write-manifest-json",
-	generateBundle(options, bundle) {
-		const manifest: Manifest = {};
-		const outDir = `${process.cwd()}/${options.dir ?? "build"}`;
-
-		for (const [_key, entry] of Object.entries(bundle)) {
-			manifest[entry.fileName] = {
-				type: entry.type,
-				file: entry.fileName,
-				name: entry.name as string,
-			};
-		}
-
-		if (!existsSync(outDir)) {
-			mkdirSync(outDir, { recursive: true });
-		}
-		writeFileSync(`${outDir}/manifest.json`, JSON.stringify(manifest));
-	},
-};
-
-const copyPublicFolder = (publicDir = publicDirFallback) =>
-	({
-		name: "copy-public-folder",
-		writeBundle(options) {
-			const outDir = options.dir ?? "build";
-			if (existsSync(`${process.cwd()}/${publicDir}`)) {
-				cpSync(
-					`${process.cwd()}/${publicDir}`,
-					`${process.cwd()}/${outDir}/${publicDir}`,
-					{
-						recursive: true,
-					},
-				);
-			}
-		},
-	}) satisfies Plugin;
-
-const gzipPlugin: Plugin = {
-	name: "gzip",
-	async writeBundle(options, bundle) {
-		for (const [fileName, file] of Object.entries(bundle)) {
-			if (fileName.endsWith(".json")) continue;
-			const source = file.type === "asset" ? file.source : file.code;
-			const compressed = zstdCompressSync(Buffer.from(source));
-
-			const path = `${options.dir}/compressed/${fileName}`;
-			const pathWithoutFile = path.split("/").slice(0, -1).join("/");
-			mkdirSync(pathWithoutFile, { recursive: true });
-			writeFileSync(`${options.dir}/compressed/${fileName}`, compressed);
-		}
-	},
-};
+} from './app-config.ts';
+import type { BuildConfig, Manifest } from './types.ts';
 
 export function definePluginConfig(
 	config?: BuildConfig | null,
@@ -222,7 +65,7 @@ export function definePluginConfig(
 			"base/_document": `${import.meta.dirname}/server/_document.tsx`,
 		},
 		cwd: process.cwd(),
-		plugins: [manifestPlugin, esbuild({ loaders: { svg: "dataurl" } })],
+		plugins: [manifestPlugin(), esbuild({ loaders: { svg: "dataurl" } })],
 		resolve: {
 			...rolldownOptions?.resolve,
 			alias: {
@@ -272,7 +115,7 @@ export function definePluginConfig(
 			plugins: [
 				...sharedOptions.plugins,
 				postcssPlugin(outDir, config?.minifyCss, config?.postcssPlugins),
-				...(config?.compress ? [gzipPlugin] : [undefined]),
+				...(config?.compress ? [compressionPlugin()] : [undefined]),
 				copyPublicFolder(config?.publicDir),
 			],
 		},
@@ -291,3 +134,85 @@ export function definePluginConfig(
 		},
 	];
 }
+
+function postcssPlugin(
+	outDir: string,
+	_minify?: boolean,
+	providedPlugins: AcceptedPlugin[] = [],
+): Plugin {
+	return {
+		name: 'postcss',
+		async transform(code, id) {
+			if (id.endsWith('.css')) {
+				const path = `${process.cwd()}/${outDir}/client${id}`;
+				const result = await postcss([...providedPlugins]).process(code, {
+					from: path,
+					to: path,
+				});
+
+				if (result) {
+					return result.css;
+				}
+			}
+
+			return code;
+		},
+	};
+}
+
+function manifestPlugin() {
+	return {
+		name: 'write-manifest-json',
+		generateBundle(options, bundle) {
+			const manifest: Manifest = {};
+			const outDir = `${process.cwd()}/${options.dir ?? 'build'}`;
+
+			for (const [_key, entry] of Object.entries(bundle)) {
+				manifest[entry.fileName] = {
+					type: entry.type,
+					file: entry.fileName,
+					name: entry.name as string,
+				};
+			}
+
+			if (!existsSync(outDir)) {
+				mkdirSync(outDir, { recursive: true });
+			}
+			writeFileSync(`${outDir}/manifest.json`, JSON.stringify(manifest));
+		},
+	} satisfies Plugin;
+}
+
+function copyPublicFolder(publicDir = publicDirFallback) {
+	return ({
+		name: 'copy-public-folder',
+		writeBundle(options) {
+			const outDir = options.dir ?? 'build';
+			if (existsSync(`${process.cwd()}/${publicDir}`)) {
+				cpSync(
+					`${process.cwd()}/${publicDir}`,
+					`${process.cwd()}/${outDir}/${publicDir}`,
+					{
+						recursive: true,
+					},
+				);
+			}
+		},
+	}) satisfies Plugin;
+}
+
+const compressionPlugin = () => ({
+	name: "compression",
+	async writeBundle(options, bundle) {
+		for (const [fileName, file] of Object.entries(bundle)) {
+			if (fileName.endsWith(".json")) continue;
+			const source = file.type === "asset" ? file.source : file.code;
+			const compressed = zstdCompressSync(Buffer.from(source));
+
+			const path = `${options.dir}/compressed/${fileName}`;
+			const pathWithoutFile = path.split("/").slice(0, -1).join("/");
+			mkdirSync(pathWithoutFile, { recursive: true });
+			writeFileSync(`${options.dir}/compressed/${fileName}`, compressed);
+		}
+	},
+} satisfies Plugin);

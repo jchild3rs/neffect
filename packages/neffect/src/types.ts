@@ -1,5 +1,7 @@
-import type { Effect } from "effect";
-import type { FunctionComponent } from "react";
+import type { Effect } from 'effect';
+import type { AcceptedPlugin } from 'postcss';
+import type { FunctionComponent } from 'react';
+import type { RolldownOptions } from 'rolldown';
 
 export type ManifestChunk = {
 	type: "chunk";
@@ -52,3 +54,83 @@ export type RouteDataModule<
 		>,
 	) => Effect.Effect<Metadata, never, never>;
 };
+
+export interface BuildConfig {
+	/**
+	 * The base URL to use for serving static assets
+	 *
+	 * @since 0.1.0
+	 * @default /_assets/
+	 * @example
+	 * ```ts
+	 * defineConfig({
+	 *   assetBaseUrl: "https://cdn.example.com/assets/"
+	 * })
+	 * ```
+	 */
+	assetBaseUrl?: `${'/' | `${string}://`}${string}/`;
+
+	/**
+	 * Compress and serve the output files with ZStandard
+	 *
+	 * @since 0.1.0
+	 */
+	compress?: boolean;
+
+	/**
+	 * The global stylesheet to use for all pages
+	 *
+	 * @default "styles.css"
+	 * @since 0.1.0
+	 */
+	globalStylesheet?: `${string}.css`;
+
+	/**
+	 * Minify the output of CSS files
+	 *
+	 * @since 0.1.0
+	 */
+	minifyCss?: boolean;
+
+	/**
+	 * Output directory for the build
+	 *
+	 * @default "build"
+	 * @since 0.1.0
+	 */
+	outDir?: string;
+
+	/**
+	 * PostCSS plugin list
+	 *
+	 * @since 0.1.0
+	 */
+	postcssPlugins?: AcceptedPlugin[];
+
+	/**
+	 * @default "public"
+	 * @since 0.1.0
+	 */
+	publicDir?: string;
+
+	/**
+	 * Additional build options (rolldown)
+	 *
+	 * @since 0.1.0
+	 */
+	rolldownOptions?: RolldownOptions;
+
+	/**
+	 * @default "src"
+	 * @since 0.1.0
+	 */
+	rootDir?: string;
+
+	/**
+	 * Output directory for the build
+	 *
+	 * @default "pages"
+	 * @since 0.1.0
+	 */
+	routeDir?: string;
+}

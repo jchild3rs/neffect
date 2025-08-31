@@ -1,6 +1,6 @@
 import { Context, Effect, Layer } from "effect";
-import type { BuildConfig } from "./plugin.ts";
 import { tryLoadModule } from "./server/load-module.ts";
+import type { BuildConfig } from './types.ts';
 
 export const assetBaseUrlFallback = "/_assets/";
 export const rootDirFallback = "src";
