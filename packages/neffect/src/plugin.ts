@@ -161,7 +161,7 @@ const copyPublicFolder: Plugin = {
 		if (existsSync(`${process.cwd()}/public`)) {
 			cpSync(
 				`${process.cwd()}/public`,
-				`${process.cwd()}/${outDir}/client/public`,
+				`${process.cwd()}/${outDir}/public`,
 				{
 					recursive: true,
 				},
