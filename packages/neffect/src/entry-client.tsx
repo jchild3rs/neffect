@@ -6,6 +6,7 @@ declare global {
 	interface Window {
 		__hasProvidedApp: boolean;
 		__loadCache: Record<string, unknown>;
+		__routeDir: string;
 	}
 }
 

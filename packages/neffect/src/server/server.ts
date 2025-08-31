@@ -14,6 +14,7 @@ import {
 	NodeRuntime,
 } from "@effect/platform-node";
 import { type ConfigError, Effect, Layer } from "effect";
+import { RootDir, RouteDir } from "../scripts/build.ts";
 import { serverPortConfig } from "./config.ts";
 import { ImportMapLive } from "./import-map.ts";
 import {
@@ -30,20 +31,30 @@ import { UuidLive } from "./uuid.ts";
 
 const NotFoundHTML = Effect.gen(function* () {
 	const fs = yield* FileSystem.FileSystem;
-	return yield* fs.readFileString(`${process.cwd()}/src/pages/404.html`).pipe(
-		Effect.catchTags({
-			SystemError: () => fs.readFileString(`${import.meta.dirname}/404.html`),
-		}),
-	);
+	const routeDir = yield* RouteDir;
+	const rootDir = yield* RootDir;
+
+	return yield* fs
+		.readFileString(`${process.cwd()}/${rootDir}/${routeDir}/404.html`)
+		.pipe(
+			Effect.catchTags({
+				SystemError: () => fs.readFileString(`${import.meta.dirname}/404.html`),
+			}),
+		);
 });
 
 const InternalServerErrorHTML = Effect.gen(function* () {
 	const fs = yield* FileSystem.FileSystem;
-	return yield* fs.readFileString(`${process.cwd()}/src/pages/500.html`).pipe(
-		Effect.catchTags({
-			SystemError: () => fs.readFileString(`${import.meta.dirname}/500.html`),
-		}),
-	);
+	const routeDir = yield* RouteDir;
+	const rootDir = yield* RootDir;
+
+	return yield* fs
+		.readFileString(`${process.cwd()}/${rootDir}/${routeDir}/500.html`)
+		.pipe(
+			Effect.catchTags({
+				SystemError: () => fs.readFileString(`${import.meta.dirname}/500.html`),
+			}),
+		);
 });
 
 const router = HttpRouter.empty.pipe(

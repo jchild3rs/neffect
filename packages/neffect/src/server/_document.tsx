@@ -8,6 +8,7 @@ export interface DocumentProps {
 	routeManifest: Manifest;
 	route: ManifestChunk;
 	routeData?: unknown;
+	routeDir: string;
 	routeContext: RouterContext;
 	head: ReactElement | null;
 	body: ReactElement | null;
@@ -115,7 +116,8 @@ export function DocumentScripts(
 			<script
 				nonce={props.nonce}
 				dangerouslySetInnerHTML={{
-					__html: `window.__hasProvidedApp = ${props.hasProvidedApp}`,
+					__html: `window.__hasProvidedApp = ${props.hasProvidedApp};
+				window.__routeDir = '${props.routeDir}';`,
 				}}
 			></script>
 		</>

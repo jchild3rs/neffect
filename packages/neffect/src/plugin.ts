@@ -9,13 +9,27 @@ import { zstdCompressSync } from "node:zlib";
 import postcss, { type AcceptedPlugin } from "postcss";
 import type { Plugin, RolldownOptions } from "rolldown";
 import esbuild from "rollup-plugin-esbuild";
+import { outDirFallback, routeDirFallback } from "./scripts/build.ts";
 import type { Manifest } from "./types.ts";
 
 export interface BuildConfig {
 	/**
+	 * @default "src"
+	 * @since 0.1.0
+	 */
+	rootDir?: string;
+
+	/**
 	 * Output directory for the build
 	 *
-	 * @default build
+	 * @default "pages"
+	 * @since 0.1.0
+	 */
+	routeDir?: string;
+	/**
+	 * Output directory for the build
+	 *
+	 * @default "build"
 	 * @since 0.1.0
 	 */
 	outDir?: string;
@@ -23,7 +37,7 @@ export interface BuildConfig {
 	/**
 	 * The global stylesheet to use for all pages
 	 *
-	 * @default styles.css
+	 * @default "styles.css"
 	 * @since 0.1.0
 	 */
 	globalStylesheet?: `${string}.css`;
@@ -80,57 +94,18 @@ const postcssPlugin = (
 	async transform(code, id) {
 		if (id.endsWith(".css")) {
 			const path = `${process.cwd()}/${outDir}/client${id}`;
-			const result = await postcss([
-				...providedPlugins,
-				// tailwindPlugin({
-				// 	base: `${process.cwd()}/src`,
-				// 	optimize: {
-				// 		minify: Boolean(minify),
-				// 	},
-				// }),
-			]).process(code, {
+			const result = await postcss([...providedPlugins]).process(code, {
 				from: path,
 				to: path,
 			});
 
 			if (result) {
 				return result.css;
-				// output
-				// writeFileSync(path, result.css);
 			}
 		}
 
 		return code;
 	},
-	// async writeBundle(options, bundle) {
-	// 	const tailwindPlugin = await import("@tailwindcss/postcss").then((mod) => mod.default)
-	//
-	// 	for (const [id, entry] of Object.entries(bundle)) {
-	// 		if (entry.type === "asset" && id.endsWith(".css")) {
-	// 			const path = `${options.dir}/${id}`;
-	// 			console.log({path})
-	//
-	// 			const result = await postcss([
-	// 				...providedPlugins,
-	// 				tailwindPlugin({
-	// 					base: `${process.cwd()}/src`,
-	// 					optimize: {
-	// 						minify: Boolean(minify)
-	// 					}
-	// 				})
-	// 			]).process(entry.source.toString(), {
-	// 				from: path,
-	// 				to: path,
-	// 			}).catch((error) => {
-	// 				console.log({ error })
-	// 			});
-	//
-	// 			if  (result) {
-	// 				writeFileSync(path, result.css);
-	// 			}
-	// 		}
-	// 	}
-	// },
 });
 
 const manifestPlugin: Plugin = {
@@ -159,13 +134,9 @@ const copyPublicFolder: Plugin = {
 	writeBundle(options) {
 		const outDir = options.dir ?? "build";
 		if (existsSync(`${process.cwd()}/public`)) {
-			cpSync(
-				`${process.cwd()}/public`,
-				`${process.cwd()}/${outDir}/public`,
-				{
-					recursive: true,
-				},
-			);
+			cpSync(`${process.cwd()}/public`, `${process.cwd()}/${outDir}/public`, {
+				recursive: true,
+			});
 		}
 	},
 };
@@ -189,38 +160,40 @@ const gzipPlugin: Plugin = {
 export function definePluginConfig(
 	config?: BuildConfig | null,
 ): RolldownOptions[] {
-	const routePaths = globSync(["src/pages/**/*.tsx"], {
+	const rootDir = config?.rootDir ?? "src";
+	const routeDir = config?.routeDir ?? routeDirFallback;
+	const routePaths = globSync([`${rootDir}/${routeDir}/**/*.tsx`], {
 		cwd: process.cwd(),
 	});
-	const outDir = config?.outDir ?? "build";
+	const outDir = config?.outDir ?? outDirFallback;
 
 	const rolldownOptions = config?.rolldownOptions ?? {};
 
 	const routeEntries = routePaths.reduce<Record<string, string>>(
 		(acc, path) => {
-			const key = path.replace("src/", "").replace(".tsx", "");
+			const key = path.replace(`${rootDir}/`, "").replace(".tsx", "");
 			acc[key] = path;
 			return acc;
 		},
 		{},
 	);
 
-	const routeLoadPaths = globSync(["src/pages/**/*.data.ts"], {
+	const routeLoadPaths = globSync([`${rootDir}/${routeDir}/**/*.data.ts`], {
 		cwd: process.cwd(),
 	});
 	const routeLoadEntries = routeLoadPaths.reduce<Record<string, string>>(
 		(acc, path) => {
-			const key = path.replace("src/", "").replace(".ts", "");
+			const key = path.replace(`${rootDir}/`, "").replace(".ts", "");
 			acc[key] = path;
 			return acc;
 		},
 		{},
 	);
 
-	const cssPaths = globSync("src/**/*.css", { cwd: process.cwd() });
+	const cssPaths = globSync(`${rootDir}/**/*.css`, { cwd: process.cwd() });
 
 	const cssEntries = cssPaths.reduce<Record<string, string>>((acc, path) => {
-		const key = path.replace("src/", "").replace(".css", "");
+		const key = path.replace(`${rootDir}/`, "").replace(".css", "");
 		acc[key] = path;
 		return acc;
 	}, {});
@@ -271,7 +244,6 @@ export function definePluginConfig(
 			},
 			input: {
 				main: `${import.meta.dirname}/entry-client.tsx`,
-				// styles: "src/styles.css",
 				...cssEntries,
 				...routeEntries,
 				...sharedOptions.input,

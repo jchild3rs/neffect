@@ -1,4 +1,5 @@
 import { Context, Effect, Layer } from "effect";
+import { RouteDir } from "../scripts/build.ts";
 import type { AssetChunk, Manifest, ManifestChunk } from "../types.ts";
 
 export class ClientManifest extends Context.Tag("ClientManifest")<
@@ -39,18 +40,19 @@ export const ServerManifestLive = Layer.effect(
 );
 export const getRouteManifest = Effect.gen(function* () {
 	const serverManifest = yield* getServerManifest;
+	const routeDir = yield* RouteDir;
 
 	return Object.entries(serverManifest).reduce<
 		Record<string, ManifestChunk | AssetChunk>
 	>((acc, [key, value]) => {
 		const routeKey = key
-			.replace("pages", "")
+			.replace(routeDir, "")
 			.split(".")[0]
 			.replace(/_([^\]]+)_/g, ":$1")
 			.replace("/index", "/");
 		if (
 			value.type === "chunk" &&
-			key.startsWith("pages/") &&
+			key.startsWith(`${routeDir}/`) &&
 			!key.includes("_app") &&
 			!key.includes("_document")
 		) {
@@ -61,7 +63,7 @@ export const getRouteManifest = Effect.gen(function* () {
 			};
 		}
 		if (value.type === "asset") {
-			acc[key.replace("pages/", "/")] = {
+			acc[key.replace(`${routeDir}/`, "/")] = {
 				...value,
 				file: value.file,
 			};

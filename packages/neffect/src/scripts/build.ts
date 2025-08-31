@@ -18,11 +18,29 @@ export const ProvidedBuildConfig = tryLoadModule<BuildConfig>(
 	true,
 );
 
+export const outDirFallback = "build";
 export const OutDir = Effect.gen(function* () {
 	const providedBuildConfig = yield* ProvidedBuildConfig;
 	return providedBuildConfig._tag === "Some"
-		? (providedBuildConfig.value.outDir ?? "build")
-		: "build";
+		? (providedBuildConfig.value.outDir ?? outDirFallback)
+		: outDirFallback;
+});
+
+export const rootDirFallback = "src";
+export const RootDir = Effect.gen(function* () {
+	const providedBuildConfig = yield* ProvidedBuildConfig;
+	return providedBuildConfig._tag === "Some"
+		? (providedBuildConfig.value.rootDir ?? rootDirFallback)
+		: rootDirFallback;
+});
+
+export const routeDirFallback = "pages";
+export const RouteDir = Effect.gen(function* () {
+	const providedBuildConfig = yield* ProvidedBuildConfig;
+
+	return providedBuildConfig._tag === "Some"
+		? (providedBuildConfig.value.routeDir ?? routeDirFallback)
+		: routeDirFallback;
 });
 
 export const build = Effect.gen(function* () {

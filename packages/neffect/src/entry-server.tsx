@@ -6,7 +6,7 @@ import { Chunk, Data, Effect, Option, Stream } from "effect";
 import type { FunctionComponent } from "preact";
 import { renderToReadableStream } from "preact-render-to-string/stream";
 import type { RouterContext } from "./router/router-context.tsx";
-import { OutDir } from './scripts/build.ts';
+import { OutDir, RouteDir } from "./scripts/build.ts";
 import type { AppComponent } from "./server/_app.tsx";
 import {
 	type DocumentComponent,
@@ -81,7 +81,8 @@ export const handle = ({
 	query: Record<string, string | string[] | undefined>;
 }) =>
 	Effect.gen(function* () {
-		const outDir =yield* OutDir
+		const outDir = yield* OutDir;
+		const routeDir = yield* RouteDir;
 		const Page = yield* loadModule<RouteComponent>(
 			`/${outDir}/server/${route.file}`,
 			true,
@@ -109,14 +110,14 @@ export const handle = ({
 
 		const Document = Option.getOrElse(
 			yield* tryLoadModule<DocumentComponent>(
-				`/${outDir}/server/pages/_document.js`,
+				`/${outDir}/server/${routeDir}/_document.js`,
 				true,
 			),
 			() => BaseDocument,
 		);
 
 		const App = yield* tryLoadModule<FunctionComponent>(
-			`/${outDir}/server/pages/_app.js`,
+			`/${outDir}/server/${routeDir}/_app.js`,
 			true,
 		);
 
@@ -133,6 +134,7 @@ export const handle = ({
 
 		const scripts = (
 			<DocumentScripts
+				routeDir={routeDir}
 				nonce={nonce}
 				routeCssEntry={routeCssEntry}
 				routeManifest={routeManifest}
@@ -159,6 +161,7 @@ export const handle = ({
 		const document = (
 			<Document
 				nonce={nonce}
+				routeDir={routeDir}
 				routeCssEntry={routeCssEntry}
 				routeManifest={routeManifest}
 				route={route}
