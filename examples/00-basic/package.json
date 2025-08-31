@@ -9,7 +9,7 @@
 	"scripts": {
 		"build": "neffect build",
 		"dev": "PORT=3000 neffect dev",
-		"preview": "NODE_ENV=production PORT=3000 neffect start"
+		"start": "NODE_ENV=production PORT=3000 neffect start"
 	},
 	"dependencies": {
 		"neffect": "*"

@@ -18,8 +18,7 @@ export async function handleRouteChange(
 	try {
 		if (window.__hasProvidedApp) {
 			ProvidedApp = await import(
-				// @ts-expect-error
-				"/_assets/pages/_app.js"
+				(`/_assets/${window.__routeDir}/_app.js`)
 			).then((mod) => mod.default);
 		}
 	} catch (_e) {
@@ -63,7 +62,7 @@ export async function handleRouteChange(
 
 			const cssRoutePath = route.file
 				.replace(".js", ".css")
-				.replace("pages/", "/");
+				.replace(`${window.__routeDir}/`, "/");
 
 			const asset = routeManifest[cssRoutePath];
 			const cssLink = document.getElementById(

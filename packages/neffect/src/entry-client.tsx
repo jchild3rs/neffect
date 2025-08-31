@@ -21,8 +21,7 @@ async function mount() {
 	try {
 		if (window.__hasProvidedApp) {
 			ProvidedApp = await import(
-				// @ts-expect-error
-				"/_assets/pages/_app.js"
+				(`/_assets/${window.__routeDir}/_app.js`)
 			).then((mod) => mod.default);
 		}
 	} catch (_e) {
