@@ -1,7 +1,7 @@
-import type { Effect } from 'effect';
-import type { AcceptedPlugin } from 'postcss';
-import type { FunctionComponent } from 'react';
-import type { RolldownOptions } from 'rolldown';
+import type { Effect } from "effect";
+import type { AcceptedPlugin } from "postcss";
+import type { FunctionComponent } from "react";
+import type { RolldownOptions } from "rolldown";
 
 export type ManifestChunk = {
 	type: "chunk";
@@ -68,7 +68,7 @@ export interface BuildConfig {
 	 * })
 	 * ```
 	 */
-	assetBaseUrl?: `${'/' | `${string}://`}${string}/`;
+	assetBaseUrl?: `${"/" | `${string}://`}${string}/`;
 
 	/**
 	 * Compress and serve the output files with ZStandard

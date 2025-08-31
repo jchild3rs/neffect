@@ -1,10 +1,12 @@
 import {
-	HttpMiddleware,
+	FileSystem,
+	HttpRouter,
 	HttpServerRequest,
 	HttpServerResponse,
 } from "@effect/platform";
 import { RouteNotFound } from "@effect/platform/HttpServerError";
 import { Effect } from "effect";
+import { ProvidedBuildConfig } from "../app-config.ts";
 import type { ManifestChunk, RouteDataModule } from "../types.ts";
 import { isProduction } from "./config.ts";
 import {
@@ -13,13 +15,50 @@ import {
 	getRouteManifest,
 	RouteManifest,
 } from "./manifests.ts";
+import { PublicFilesMap } from "./public-files.ts";
 import { RouteHandler } from "./route-handler.ts";
 import { Uuid } from "./uuid.ts";
 
-export const RouteMiddleware = HttpMiddleware.make((app) =>
+export const RouteCatchAll = HttpRouter.all(
+	"*",
 	Effect.gen(function* () {
 		const request = yield* HttpServerRequest.HttpServerRequest;
 		const uuid = yield* Uuid;
+		const buildConfig = yield* ProvidedBuildConfig;
+		const publicFilesMap = yield* PublicFilesMap;
+		const fs = yield* FileSystem.FileSystem;
+		const { assetBaseUrl, outDir, publicDir } = yield* ProvidedBuildConfig;
+
+		if (request.url.includes(assetBaseUrl)) {
+			const hasCompressed = yield* fs.exists(
+				`${process.cwd()}/${outDir}/client/compressed`,
+			);
+			const acceptEncoding = request.headers["accept-encoding"] || "";
+			const responseHeaders: Record<string, string> = {};
+			const isCompressed = hasCompressed && acceptEncoding.includes("zstd");
+			const path = request.url.split(assetBaseUrl)[1];
+			if (isCompressed) {
+				responseHeaders["Content-Encoding"] = "zstd";
+
+				return yield* HttpServerResponse.file(
+					`${process.cwd()}/${outDir}/client/${isCompressed ? "compressed/" : ""}${path}`,
+					{ headers: responseHeaders },
+				);
+			}
+
+			return yield* HttpServerResponse.file(
+				`${process.cwd()}/${outDir}/client/${path}`,
+			);
+		}
+
+		const pathParts = request.url.split("/").filter(Boolean);
+		const lastPart = pathParts[pathParts.length - 1];
+
+		if (publicFilesMap[lastPart]) {
+			return yield* HttpServerResponse.file(
+				`${process.cwd()}/${outDir}/client/${publicDir}/${lastPart}`,
+			);
+		}
 
 		const responseHeaders: Record<string, string> = {
 			"X-Request-Id": yield* uuid.generate,
@@ -42,7 +81,7 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 			const mod = yield* Effect.promise(
 				() =>
 					import(
-						`${process.cwd()}/build/server${modPath.replace(".json", ".data.js")}`
+						`${process.cwd()}/${buildConfig.outDir}/server${modPath.replace(".json", ".data.js")}`
 					) as Promise<RouteDataModule>,
 			);
 
@@ -64,7 +103,7 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 				const routeHandler = yield* RouteHandler;
 				const importMap = yield* Effect.promise(() =>
 					import(
-						`${process.cwd()}/build/client/importmap.json${
+						`${process.cwd()}/${buildConfig.outDir}/client/importmap.json${
 							isProd
 								? ""
 								: // this is a module cache bust for dev mode
@@ -108,6 +147,6 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 			}
 		}
 
-		return yield* app;
+		return yield* Effect.fail(new RouteNotFound({ request }));
 	}),
 );

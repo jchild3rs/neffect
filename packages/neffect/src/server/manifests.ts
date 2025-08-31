@@ -7,12 +7,17 @@ export class ClientManifest extends Context.Tag("ClientManifest")<
 	Manifest
 >() {}
 
-export const getClientManifest = Effect.promise(
-	() =>
-		import(`${process.cwd()}/build/client/manifest.json`, {
-			with: { type: "json" },
-		}).then((mod) => mod.default) as unknown as Promise<Manifest>,
+export const getClientManifest = ProvidedBuildConfig.pipe(
+	Effect.flatMap((buildConfig) =>
+		Effect.promise(
+			() =>
+				import(`${process.cwd()}/${buildConfig.outDir}/client/manifest.json`, {
+					with: { type: "json" },
+				}).then((mod) => mod.default) as unknown as Promise<Manifest>,
+		),
+	),
 );
+
 export const ClientManifestLive = Layer.effect(
 	ClientManifest,
 	getClientManifest,
@@ -28,12 +33,17 @@ export class ServerManifest extends Context.Tag("ServerManifest")<
 	Manifest
 >() {}
 
-export const getServerManifest = Effect.promise(
-	() =>
-		import(`${process.cwd()}/build/server/manifest.json`, {
-			with: { type: "json" },
-		}).then((mod) => mod.default) as unknown as Promise<Manifest>,
+export const getServerManifest = ProvidedBuildConfig.pipe(
+	Effect.flatMap((buildConfig) =>
+		Effect.promise(
+			() =>
+				import(`${process.cwd()}/${buildConfig.outDir}/server/manifest.json`, {
+					with: { type: "json" },
+				}).then((mod) => mod.default) as unknown as Promise<Manifest>,
+		),
+	),
 );
+
 export const ServerManifestLive = Layer.effect(
 	ServerManifest,
 	getServerManifest,

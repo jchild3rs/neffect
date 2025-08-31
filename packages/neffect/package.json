@@ -39,6 +39,22 @@
 			"import": "./build/esm/_app.js",
 			"types": "./build/types/server/_app.d.ts"
 		},
+		"./app-config": {
+			"import": "./build/esm/app-config.js",
+			"types": "./build/types/app-config.d.ts"
+		},
+		"./external-router": {
+			"import": "./build/esm/router.js",
+			"types": "./build/types/external-router.d.ts"
+		},
+		"./router-context": {
+			"import": "./build/esm/router-context.js",
+			"types": "./build/types/router/router-context.d.ts"
+		},
+		"./importmap": {
+			"import": "./build/esm/importmap.js",
+			"types": "./build/types/server/import-map.d.ts"
+		},
 		"./cli": {
 			"import": "./build/esm/cli.js",
 			"types": "./build/types/cli.d.ts"

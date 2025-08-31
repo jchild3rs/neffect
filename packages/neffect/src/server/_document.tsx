@@ -5,8 +5,8 @@ import type { ImportMapJSON } from "./import-map.ts";
 
 export interface DocumentProps {
 	routeCssEntry?: ManifestChunk;
-	routeManifest: Manifest;
-	route: ManifestChunk;
+	routeManifest?: Manifest;
+	route?: ManifestChunk;
 	routeData?: unknown;
 	routeDir: string;
 	assetBaseUrl: string;
@@ -77,20 +77,22 @@ export function DocumentScripts(
 ) {
 	return (
 		<>
-			<script
-				nonce={props.nonce}
-				type="application/json"
-				id="route-data"
-				dangerouslySetInnerHTML={{
-					__html: JSON.stringify({
-						routeContext: props.routeContext,
-						fileImport: `${props.assetBaseUrl}${props.route.file}`,
-						cssImport: props.routeCssEntry
-							? `${props.assetBaseUrl}${props.routeCssEntry.file}`
-							: null,
-					}),
-				}}
-			></script>
+			{props.route && props.routeContext && (
+				<script
+					nonce={props.nonce}
+					type="application/json"
+					id="route-data"
+					dangerouslySetInnerHTML={{
+						__html: JSON.stringify({
+							routeContext: props.routeContext,
+							fileImport: `${props.assetBaseUrl}${props.route.file}`,
+							cssImport: props.routeCssEntry
+								? `${props.assetBaseUrl}${props.routeCssEntry.file}`
+								: null,
+						}),
+					}}
+				></script>
+			)}
 
 			<script
 				nonce={props.nonce}
@@ -125,9 +127,10 @@ export function DocumentScripts(
 			<script
 				nonce={props.nonce}
 				dangerouslySetInnerHTML={{
-					__html: `window.__hasProvidedApp = ${props.hasProvidedApp};
-				window.__routeDir = '${props.routeDir}';
-				window.__assetBaseUrl = '${props.assetBaseUrl}';`,
+					__html: `
+					window.__hasProvidedApp = ${Boolean(props.hasProvidedApp)};
+					${props.routeDir ? `window.__routeDir = '${props.routeDir}';` : ""}
+					window.__assetBaseUrl = '${props.assetBaseUrl}';`,
 				}}
 			></script>
 		</>

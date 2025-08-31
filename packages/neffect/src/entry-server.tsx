@@ -2,7 +2,7 @@ import "urlpattern-polyfill";
 import { randomBytes } from "node:crypto";
 import { HttpServerResponse } from "@effect/platform";
 import { signal } from "@preact/signals";
-import { Chunk, Data, Effect, Option, Stream } from "effect";
+import { Data, Effect, Option, Stream } from "effect";
 import type { FunctionComponent } from "preact";
 import { renderToReadableStream } from "preact-render-to-string/stream";
 import { ProvidedBuildConfig } from "./app-config.ts";
@@ -13,6 +13,7 @@ import {
 	DocumentHead,
 	DocumentScripts,
 } from "./server/_document.tsx";
+import { DOCTYPE_HTML_CHUNK } from "./server/constants.tsx";
 import type { ImportMapJSON } from "./server/import-map.ts";
 import { loadModule, tryLoadModule } from "./server/load-module.ts";
 import type {
@@ -31,10 +32,6 @@ class StreamRenderError extends Data.TaggedError("StreamRenderError") {
 		this.cause = _cause;
 	}
 }
-
-const DOCTYPE_HTML_CHUNK = Chunk.of(
-	new TextEncoder().encode("<!DOCTYPE html>"),
-);
 
 const onStreamError = (error: unknown) => {
 	console.error(error);

@@ -22,7 +22,6 @@ export const PublicFilesMapLive = Layer.effect(
 			{},
 		);
 
-		console.log({ publicFiles });
 		return publicFiles.reduce<Record<string, string>>((acc, file) => {
 			acc[file] = file;
 			return acc;

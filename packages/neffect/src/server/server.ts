@@ -23,9 +23,9 @@ import {
 	ServerManifestLive,
 } from "./manifests.ts";
 import { PublicFilesMapLive } from "./public-files.ts";
+import { RouteCatchAll } from "./route-catchall.ts";
 import { RouteHandlerLive } from "./route-handler.ts";
-import { RouteMiddleware } from "./route-middleware.ts";
-import { StaticAssetsLive, StaticAssetsMiddleware } from "./static-assets.ts";
+import { StaticAssetsLive } from "./static-assets.ts";
 import { NodeSdkLive } from "./tracing.ts";
 import { UuidLive } from "./uuid.ts";
 
@@ -59,9 +59,61 @@ const InternalServerErrorHTML = Effect.gen(function* () {
 		);
 });
 
-const router = HttpRouter.empty.pipe(
-	StaticAssetsMiddleware,
-	RouteMiddleware,
+const baseRouter = HttpRouter.empty.pipe(
+	HttpRouter.get("/healthz", HttpServerResponse.text("OK")),
+	RouteCatchAll,
+);
+
+// let providedRouter = HttpRouter.empty;
+// try {
+// 	providedRouter = await import(`${process.cwd()}/build/server/router.js`).then(
+// 		(mod) => mod.default as HttpRouter.HttpRouter,
+// 	);
+// } catch (error: unknown) {
+// 	if (
+// 		(
+// 			error as {
+// 				code: string;
+// 			}
+// 		).code !== "ERR_MODULE_NOT_FOUND"
+// 	) {
+// 		console.error(error);
+// 	}
+// }
+
+const defaultMiddleware = HttpMiddleware.make((app) => app);
+
+const { providedRouter, middleware } = await Effect.runPromise(
+	Effect.promise(() =>
+		import(`${process.cwd()}/build/server/router.js`).then((mod) => ({
+			providedRouter: mod.default as HttpRouter.HttpRouter,
+			middleware: mod.middleware as typeof defaultMiddleware,
+		})),
+	).pipe(
+		Effect.catchAllCause(() =>
+			Effect.succeed({
+				providedRouter: HttpRouter.empty,
+				middleware: defaultMiddleware,
+			}),
+		),
+	),
+);
+
+const router = HttpRouter.concat(baseRouter, providedRouter);
+
+const HttpServerLive = Layer.unwrapEffect(
+	Effect.gen(function* () {
+		const port = yield* serverPortConfig;
+
+		return NodeHttpServer.layer(() => createServer(), { port });
+	}),
+);
+
+export const server: Layer.Layer<
+	never,
+	PlatformError | ConfigError.ConfigError | ServeError
+> = router.pipe(
+	middleware,
 	HttpMiddleware.xForwardedHeaders,
 	Effect.catchTags({
 		RouteNotFound: () =>
@@ -96,26 +148,12 @@ const router = HttpRouter.empty.pipe(
 	Layer.provide(RouteManifestLive),
 	Layer.provide(ServerManifestLive),
 	Layer.provide(PublicFilesMapLive),
-	Layer.provide(ProvidedBuildConfigLive),
 	Layer.provide(ClientManifestLive),
 	Layer.provide(RouteHandlerLive),
 	Layer.provide(ImportMapLive),
 	Layer.provide(UuidLive),
-);
-
-export const server: Layer.Layer<
-	never,
-	PlatformError | ConfigError.ConfigError | ServeError
-> = router.pipe(
-	Layer.provide(
-		Layer.unwrapEffect(
-			Effect.gen(function* () {
-				const port = yield* serverPortConfig;
-
-				return NodeHttpServer.layer(() => createServer(), { port });
-			}),
-		),
-	),
+	Layer.provide(HttpServerLive),
+	Layer.provide(ProvidedBuildConfigLive),
 	Layer.provide(NodeSdkLive),
 	Layer.provide(NodeContext.layer),
 );
@@ -123,20 +161,23 @@ export const server: Layer.Layer<
 // Storing in memory here – so there's no _actual_ async
 // behavior when importing these during routing.
 export const warmUpServerImports = Effect.gen(function* () {
+	const buildConfig = yield* ProvidedBuildConfig;
 	const manifest = yield* Effect.promise(() =>
-		import(`${process.cwd()}/build/server/manifest.json`, {
+		import(`${process.cwd()}/${buildConfig.outDir}/server/manifest.json`, {
 			with: { type: "json" },
 		}).then((mod) => mod.default),
 	);
 	const importPaths = Object.keys(manifest)
 		.filter((path) => path.endsWith(".js"))
-		.map((path) => `${process.cwd()}/build/server/${path}`);
+		.map((path) => `${process.cwd()}/${buildConfig.outDir}/server/${path}`);
 	yield* Effect.all(
 		importPaths.map((path) => Effect.promise(() => import(path))),
 	);
 });
 
 if (import.meta.main) {
-	NodeRuntime.runMain(warmUpServerImports);
+	NodeRuntime.runMain(
+		warmUpServerImports.pipe(Effect.provide(ProvidedBuildConfigLive)),
+	);
 	NodeRuntime.runMain(Layer.launch(server));
 }

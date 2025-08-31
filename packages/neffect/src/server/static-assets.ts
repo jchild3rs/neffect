@@ -1,12 +1,6 @@
-import {
-	FileSystem,
-	HttpMiddleware,
-	HttpServerRequest,
-	HttpServerResponse,
-} from "@effect/platform";
+import { FileSystem } from "@effect/platform";
 import { Context, Effect, Layer } from "effect";
 import { ProvidedBuildConfig } from "../app-config.ts";
-import { PublicFilesMap } from "./public-files.ts";
 
 export class StaticAssets extends Context.Tag("StaticAssets")<
 	StaticAssets,
@@ -29,47 +23,5 @@ export const StaticAssetsLive = Layer.effect(
 			acc[path] = file;
 			return acc;
 		}, {});
-	}),
-);
-
-export const StaticAssetsMiddleware = HttpMiddleware.make((app) =>
-	Effect.gen(function* () {
-		const request = yield* HttpServerRequest.HttpServerRequest;
-		const fs = yield* FileSystem.FileSystem;
-		const { assetBaseUrl, outDir, publicDir } = yield* ProvidedBuildConfig;
-
-		if (request.url.includes(assetBaseUrl)) {
-			const hasCompressed = yield* fs.exists(
-				`${process.cwd()}/${outDir}/client/compressed`,
-			);
-			const acceptEncoding = request.headers["accept-encoding"] || "";
-			const responseHeaders: Record<string, string> = {};
-			const isCompressed = hasCompressed && acceptEncoding.includes("zstd");
-			const path = request.url.split(assetBaseUrl)[1];
-			if (isCompressed) {
-				responseHeaders["Content-Encoding"] = "zstd";
-
-				return yield* HttpServerResponse.file(
-					`${process.cwd()}/${outDir}/client/${isCompressed ? "compressed/" : ""}${path}`,
-					{ headers: responseHeaders },
-				);
-			}
-
-			return yield* HttpServerResponse.file(
-				`${process.cwd()}/${outDir}/client/${path}`,
-			);
-		}
-
-		const publicFilesMap = yield* PublicFilesMap;
-		const pathParts = request.url.split("/").filter(Boolean);
-		const lastPart = pathParts[pathParts.length - 1];
-
-		if (publicFilesMap[lastPart]) {
-			return yield* HttpServerResponse.file(
-				`${process.cwd()}/${outDir}/client/${publicDir}/${lastPart}`,
-			);
-		}
-
-		return yield* app;
 	}),
 );

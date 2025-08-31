@@ -1,0 +1,17 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"types": ["node"],
+		"noEmit": true,
+		"tsBuildInfoFile": "../../node_modules/.tmp/examples-basic.tsconfig.tsbuildinfo",
+		"baseUrl": "./",
+		"paths": {
+			"react": ["../../node_modules/preact/compat/"],
+			"react/jsx-runtime": ["../../node_modules/preact/jsx-runtime"],
+			"react-dom": ["../../node_modules/preact/compat/"],
+			"react-dom/*": ["../../node_modules/preact/compat/*"]
+		}
+	},
+	"include": ["src"],
+	"references": [{ "path": "../../packages/neffect/tsconfig.json" }]
+}

@@ -1,12 +1,14 @@
 import { Context, Effect, Layer } from "effect";
+import {
+	assetBaseUrlFallback,
+	globalStylesheetFallback,
+	outDirFallback,
+	publicDirFallback,
+	rootDirFallback,
+	routeDirFallback,
+} from "./server/config.ts";
 import { tryLoadModule } from "./server/load-module.ts";
-import type { BuildConfig } from './types.ts';
-
-export const assetBaseUrlFallback = "/_assets/";
-export const rootDirFallback = "src";
-export const outDirFallback = "build";
-export const publicDirFallback = "public";
-export const routeDirFallback = "pages";
+import type { BuildConfig } from "./types.ts";
 
 export class ProvidedBuildConfig extends Context.Tag("ProvidedBuildConfig")<
 	ProvidedBuildConfig,
@@ -33,6 +35,7 @@ export const getAppBuildConfig = tryLoadModule<BuildConfig>(
 			publicDir: config.publicDir ?? publicDirFallback,
 			rootDir: config.rootDir ?? rootDirFallback,
 			routeDir: config.routeDir ?? routeDirFallback,
+			globalStylesheet: config.globalStylesheet ?? globalStylesheetFallback,
 		} satisfies BuildConfig;
 	}),
 );

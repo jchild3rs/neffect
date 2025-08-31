@@ -9,6 +9,11 @@ const config: RolldownOptions = {
 		document: "./src/server/_document.tsx",
 		app: "./src/server/_app.tsx",
 		plugin: "./src/plugin.ts",
+		// handle: "./src/entry-server.tsx",
+		// importmap: "./src/server/import-map.ts",
+		router: "./src/external-router.tsx",
+		"router-context": "./src/router/router-context.tsx",
+		"app-config": "./src/app-config.ts",
 	},
 	output: {
 		dir: "build/esm",
