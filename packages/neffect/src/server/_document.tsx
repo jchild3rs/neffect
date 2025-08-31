@@ -43,6 +43,7 @@ export function DocumentHead(
 						: undefined
 				}
 			/>
+			<link rel="icon" href="/favicon.ico" />
 			{props.children}
 		</head>
 	);
