@@ -1,11 +1,8 @@
 {
-	"extends": "./tsconfig.base.json",
-	"compilerOptions": {
-		"noEmit": true
-	},
 	"files": [],
 	"references": [
-		{ "path": "./examples/basic/tsconfig.json" },
+		{ "path": "./examples/00-basic/tsconfig.json" },
+		{ "path": "./examples/01-tailwind/tsconfig.json" },
 		{ "path": "./packages/neffect/tsconfig.json" }
 	]
 }

@@ -1,0 +1,22 @@
+{
+	"name": "neffect-example-tailwind",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"engines": {
+		"node": ">=24.7.0"
+	},
+	"scripts": {
+		"build": "neffect build",
+		"dev": "PORT=3001 neffect dev",
+		"start": "neffect start"
+	},
+	"dependencies": {
+		"neffect": "*"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "^4.1.12",
+		"postcss": "^8.5.6",
+		"typescript": "^5.9.2"
+	}
+}

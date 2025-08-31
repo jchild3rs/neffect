@@ -4,7 +4,7 @@ export function loadModule<T>(
 	path: string,
 	returnDefault?: boolean,
 ): Effect.Effect<T> {
-	console.log(`loadModule(${path})`);
+	// console.log(`loadModule(${path})`);
 	return Effect.promise(() =>
 		import(`${process.cwd()}${path.startsWith("/") ? "" : "/"}${path}`).then(
 			(mod) => {
@@ -18,7 +18,7 @@ export function loadModule<T>(
 }
 
 export function tryLoadModule<T>(path: string, returnDefault?: boolean) {
-	console.log(`tryLoadModule(${path})`);
+	// console.log(`tryLoadModule(${path})`);
 	return Effect.tryPromise({
 		try: () =>
 			import(`${process.cwd()}${path.startsWith("/") ? "" : "/"}${path}`).then(
