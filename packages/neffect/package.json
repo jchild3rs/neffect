@@ -1,0 +1,73 @@
+{
+	"name": "neffect",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"build": "tsc && rolldown -c rolldown.config.ts"
+	},
+	"bin": {
+		"neffect": "./src/cli.ts"
+	},
+	"exports": {
+		"./app": {
+			"import": "./dist/esm/_app.js",
+			"types": "./dist/types/server/_app.d.ts"
+		},
+		"./cli": {
+			"import": "./dist/esm/cli.js",
+			"types": "./dist/types/cli.d.ts"
+		},
+		"./document": {
+			"import": "./dist/esm/_document.js",
+			"types": "./dist/types/server/_document.d.ts"
+		},
+		"./link": {
+			"import": "./dist/esm/link.js",
+			"types": "./dist/types/router/link.d.ts"
+		},
+		"./plugin": {
+			"import": "./dist/esm/plugin.js",
+			"types": "./dist/types/plugin.d.ts"
+		},
+		"./server": {
+			"import": "./dist/esm/server.js",
+			"types": "./dist/types/server/server.d.ts"
+		},
+		"./server/*": {
+			"import": "./dist/esm/server/*.js",
+			"types": "./dist/types/server/*.d.ts"
+		},
+		"./use-*": {
+			"import": "./dist/esm/router/use-*.js",
+			"types": "./dist/types/router/use-*.d.ts"
+		}
+	},
+	"dependencies": {
+		"@effect/cli": "^0.69.2",
+		"@effect/opentelemetry": "^0.56.4",
+		"@effect/platform": "^0.90.6",
+		"@effect/platform-node": "^0.96.0",
+		"@opentelemetry/exporter-trace-otlp-http": "^0.203.0",
+		"@opentelemetry/sdk-trace-base": "^2.0.1",
+		"@opentelemetry/sdk-trace-node": "^2.0.1",
+		"@opentelemetry/sdk-trace-web": "^2.0.1",
+		"@preact/signals": "^2.3.1",
+		"effect": "^3.17.9",
+		"preact": "^10.27.0",
+		"preact-render-to-string": "^6.6.1",
+		"urlpattern-polyfill": "^10.1.0",
+		"uuid": "^11.1.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.2",
+		"@tailwindcss/postcss": "^4.1.12",
+		"@types/node": "^24.3.0",
+		"cssnano": "^7.1.1",
+		"postcss": "^8.5.6",
+		"rolldown": "^1.0.0-beta.34",
+		"rollup-plugin-esbuild": "^6.2.1",
+		"tailwindcss": "^4.1.12",
+		"typescript": "^5.9.2"
+	}
+}

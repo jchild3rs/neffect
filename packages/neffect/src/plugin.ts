@@ -63,12 +63,8 @@ export interface BuildConfig {
 	postcssPlugins?: AcceptedPlugin[];
 }
 
-const tailwindPlugin = await import("@tailwindcss/postcss").then(
-	(mod) => mod.default,
-);
-
 const postcssPlugin = (
-	minify?: boolean,
+	_minify?: boolean,
 	providedPlugins: AcceptedPlugin[] = [],
 ): Plugin => ({
 	name: "postcss",
@@ -77,12 +73,12 @@ const postcssPlugin = (
 			const path = `${process.cwd()}/dist/client${id}`;
 			const result = await postcss([
 				...providedPlugins,
-				tailwindPlugin({
-					base: `${process.cwd()}/src`,
-					optimize: {
-						minify: Boolean(minify),
-					},
-				}),
+				// tailwindPlugin({
+				// 	base: `${process.cwd()}/src`,
+				// 	optimize: {
+				// 		minify: Boolean(minify),
+				// 	},
+				// }),
 			]).process(code, {
 				from: path,
 				to: path,
@@ -214,8 +210,8 @@ export function definePluginConfig(
 	const sharedOptions = {
 		...rolldownOptions,
 		input: {
-			"base/_app": "neffect/app",
-			"base/_document": "neffect/document",
+			"base/_app": `${import.meta.dirname}/server/_app.tsx`,
+			"base/_document": `${import.meta.dirname}/server/_document.tsx`,
 		},
 		cwd: process.cwd(),
 		plugins: [manifestPlugin, esbuild({ loaders: { svg: "dataurl" } })],
@@ -227,12 +223,12 @@ export function definePluginConfig(
 				"react-dom/test-utils": "preact/test-utils",
 				"react-dom": "preact/compat",
 				"react/jsx-runtime": "preact/jsx-runtime",
-				"neffect/link": `${process.cwd()}/lib/router/link.tsx`,
-				"neffect/server": `${process.cwd()}/lib/server/server.ts`,
-				"neffect/use-*": `${process.cwd()}/lib/router/use-*.ts`,
-				"neffect/document": `${process.cwd()}/lib/server/_document.tsx`,
-				"neffect/app": `${process.cwd()}/lib/server/_app.tsx`,
-				"neffect/server/$(.*)": `${process.cwd()}/lib/server/$1.ts`,
+				"neffect/link": `${import.meta.dirname}/router/link.tsx`,
+				"neffect/server": `${import.meta.dirname}/server/server.ts`,
+				"neffect/use-*": `${import.meta.dirname}/router/use-*.ts`,
+				"neffect/document": `${import.meta.dirname}/server/_document.tsx`,
+				"neffect/app": `${import.meta.dirname}/server/_app.tsx`,
+				"neffect/server/$(.*)": `${import.meta.dirname}/server/$1.ts`,
 			},
 		},
 		transform: {
@@ -256,8 +252,8 @@ export function definePluginConfig(
 				strictExecutionOrder: true,
 			},
 			input: {
-				main: "lib/entry-client.tsx",
-				styles: "src/styles.css",
+				main: `${import.meta.dirname}/entry-client.tsx`,
+				// styles: "src/styles.css",
 				...cssEntries,
 				...routeEntries,
 				...sharedOptions.input,
@@ -276,7 +272,7 @@ export function definePluginConfig(
 		{
 			...sharedOptions,
 			input: {
-				main: "lib/entry-server.tsx",
+				main: `${import.meta.dirname}/entry-server.tsx`,
 				...routeEntries,
 				...routeLoadEntries,
 				...sharedOptions.input,

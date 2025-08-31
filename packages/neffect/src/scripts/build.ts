@@ -2,10 +2,10 @@
 
 import { FileSystem } from "@effect/platform";
 import { NodeContext, NodeRuntime } from "@effect/platform-node";
-import { Effect, Option } from "effect";
+import { Effect } from "effect";
 import { type RolldownBuild, type RolldownOptions, rolldown } from "rolldown";
 import { type BuildConfig, definePluginConfig } from "../plugin.ts";
-import { loadModule } from "../server/load-module.ts";
+import { tryLoadModule } from "../server/load-module.ts";
 
 interface BundleResult {
 	path: string;
@@ -13,14 +13,14 @@ interface BundleResult {
 	compressed?: string | undefined;
 }
 
+export const ProvidedBuildConfig = tryLoadModule<BuildConfig>("/app.config.ts");
+
 export const build = Effect.gen(function* () {
 	yield* Effect.logInfo("Building...");
 	const fs = yield* FileSystem.FileSystem;
-	const providedBuildConfig = yield* loadModule<BuildConfig>("/app.config.ts");
+	// const providedBuildConfig = yield* ProvidedBuildConfig
 
-	const configs = definePluginConfig(
-		Option.getOrUndefined(providedBuildConfig),
-	);
+	const configs = definePluginConfig({});
 
 	yield* Effect.all(
 		["dist/server", "dist/client"].map((path) =>
@@ -157,3 +157,5 @@ export const build = Effect.gen(function* () {
 if (import.meta.main) {
 	NodeRuntime.runMain(build.pipe(Effect.provide(NodeContext.layer)));
 }
+
+export default build;

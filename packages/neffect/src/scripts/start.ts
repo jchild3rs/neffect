@@ -19,4 +19,8 @@ const start = Effect.gen(function* () {
 	return yield* Layer.launch(server);
 });
 
-NodeRuntime.runMain(start.pipe(Effect.provide(NodeContext.layer)));
+if (import.meta.main) {
+	NodeRuntime.runMain(start.pipe(Effect.provide(NodeContext.layer)));
+}
+
+export default start;

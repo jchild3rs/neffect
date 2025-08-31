@@ -14,6 +14,7 @@ import {
 	DocumentScripts,
 } from "./server/_document.tsx";
 import type { ImportMapJSON } from "./server/import-map.ts";
+import { loadModule, tryLoadModule } from "./server/load-module.ts";
 import type {
 	Manifest,
 	ManifestChunk,
@@ -39,35 +40,6 @@ const onStreamError = (error: unknown) => {
 	console.error(error);
 	return Effect.fail(new StreamRenderError(error));
 };
-
-const loadModule = <T,>(
-	path: string,
-	returnDefault?: boolean,
-): Effect.Effect<T> =>
-	Effect.promise(() =>
-		import(
-			`${process.cwd()}/dist/server/${path.startsWith("/") ? "" : "/"}${path}`
-		).then((mod) => {
-			if (returnDefault) {
-				return mod.default;
-			}
-			return mod;
-		}),
-	);
-
-const tryLoadModule = <T,>(path: string, returnDefault?: boolean) =>
-	Effect.tryPromise({
-		try: () =>
-			import(
-				`${process.cwd()}/dist/server/${path.startsWith("/") ? "" : "/"}${path}`
-			).then((mod) => {
-				if (returnDefault) {
-					return Option.some(mod.default as T);
-				}
-				return Option.some(mod as T);
-			}),
-		catch: () => Option.none(),
-	});
 
 const getPageData = (path: string) =>
 	tryLoadModule<RouteDataModule>(path.replace(".js", ".data.js")).pipe(
@@ -109,8 +81,11 @@ export const handle = ({
 	query: Record<string, string | string[] | undefined>;
 }) =>
 	Effect.gen(function* () {
-		const Page = yield* loadModule<RouteComponent>(route.file, true);
-		const { data, metadata } = yield* getPageData(route.file);
+		const Page = yield* loadModule<RouteComponent>(
+			`/dist/server/${route.file}`,
+			true,
+		);
+		const { data, metadata } = yield* getPageData(`/dist/server/${route.file}`);
 		const pageProps = { data, query, params };
 
 		const routeContext: RouterContext = {
@@ -120,18 +95,27 @@ export const handle = ({
 		};
 
 		const BaseDocument = yield* loadModule<DocumentComponent>(
-			"/base/_document.js",
+			"/dist/server/base/_document.js",
 			true,
 		);
 
-		const BaseApp = yield* loadModule<AppComponent>("/base/_app.js", true);
+		const BaseApp = yield* loadModule<AppComponent>(
+			"/dist/server/base/_app.js",
+			true,
+		);
 
 		const Document = Option.getOrElse(
-			yield* tryLoadModule<DocumentComponent>(`/pages/_document.js`, true),
+			yield* tryLoadModule<DocumentComponent>(
+				`/dist/server/pages/_document.js`,
+				true,
+			),
 			() => BaseDocument,
 		);
 
-		const App = yield* tryLoadModule<FunctionComponent>(`/pages/_app.js`, true);
+		const App = yield* tryLoadModule<FunctionComponent>(
+			`/dist/server/pages/_app.js`,
+			true,
+		);
 
 		const nonce = randomBytes(16).toString("base64");
 		const head = (

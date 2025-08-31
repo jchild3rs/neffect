@@ -1,4 +1,4 @@
-import type { BuildConfig } from "./lib/plugin.ts";
+import type { BuildConfig } from "neffect/plugin";
 
 const config: BuildConfig = {
 	minifyCss: true,
