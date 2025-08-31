@@ -1,0 +1,20 @@
+{
+	"name": "neffect-example-data-fetching",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"engines": {
+		"node": ">=24.7.0"
+	},
+	"scripts": {
+		"build": "neffect build",
+		"dev": "PORT=3000 neffect dev",
+		"start": "NODE_ENV=production PORT=3000 neffect start"
+	},
+	"dependencies": {
+		"neffect": "*"
+	},
+	"devDependencies": {
+		"typescript": "^5.9.2"
+	}
+}

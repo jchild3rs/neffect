@@ -1,5 +1,5 @@
 {
-	"name": "neffect-programmatic-routing",
+	"name": "neffect-example-file-based-routing",
 	"private": true,
 	"version": "0.1.0",
 	"type": "module",
@@ -8,13 +8,10 @@
 	},
 	"scripts": {
 		"build": "neffect build",
-		"dev": "PORT=3003 neffect dev",
-		"start": "NODE_ENV=production PORT=3003 neffect start"
+		"dev": "PORT=3000 neffect dev",
+		"start": "NODE_ENV=production PORT=3000 neffect start"
 	},
 	"dependencies": {
-		"@effect/platform": "^0.90.6",
-		"@effect/platform-node": "^0.96.0",
-		"effect": "^3.17.9",
 		"neffect": "*"
 	},
 	"devDependencies": {

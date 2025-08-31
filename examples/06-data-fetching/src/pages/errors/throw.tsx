@@ -1,3 +1,3 @@
 export default function Page() {
-	return <div>Pretty boring.</div>;
+	throw new Error("weeee");
 }
