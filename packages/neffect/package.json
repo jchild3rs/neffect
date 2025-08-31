@@ -35,6 +35,7 @@
 		"neffect": "./src/cli.ts"
 	},
 	"exports": {
+		"./types": "./build/types/types.d.ts",
 		"./app": {
 			"import": "./build/esm/_app.js",
 			"types": "./build/types/server/_app.d.ts"

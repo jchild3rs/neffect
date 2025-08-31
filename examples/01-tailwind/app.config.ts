@@ -1,5 +1,5 @@
 import tailwind from "@tailwindcss/postcss";
-import type { BuildConfig } from "neffect/plugin";
+import type { BuildConfig } from "neffect/types";
 
 const isProd = process.env.NODE_ENV === "production";
 
