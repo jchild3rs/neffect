@@ -9,7 +9,7 @@ import { build } from "./build.ts";
 const start = Effect.gen(function* () {
 	const fs = yield* FileSystem.FileSystem;
 
-	const hasBuild = yield* fs.exists(`${process.cwd()}./dist`);
+	const hasBuild = yield* fs.exists(`${process.cwd()}/build`);
 	if (!hasBuild) {
 		yield* build;
 	}

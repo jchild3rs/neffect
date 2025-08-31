@@ -42,7 +42,7 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 			const mod = yield* Effect.promise(
 				() =>
 					import(
-						`${process.cwd()}/dist/server${modPath.replace(".json", ".data.js")}`
+						`${process.cwd()}/build/server${modPath.replace(".json", ".data.js")}`
 					) as Promise<RouteDataModule>,
 			);
 
@@ -64,7 +64,7 @@ export const RouteMiddleware = HttpMiddleware.make((app) =>
 				const routeHandler = yield* RouteHandler;
 				const importMap = yield* Effect.promise(() =>
 					import(
-						`${process.cwd()}/dist/client/importmap.json${
+						`${process.cwd()}/build/client/importmap.json${
 							isProd
 								? ""
 								: // this is a module cache bust for dev mode

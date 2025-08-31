@@ -1,10 +1,11 @@
 import tailwind from "@tailwindcss/postcss";
 import type { BuildConfig } from "neffect/plugin";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const config: BuildConfig = {
-	minifyCss: true,
-	compress: true,
-	postcssPlugins: [tailwind({ optimize: { minify: true } })],
+	minifyCss: isProd,
+	postcssPlugins: [tailwind({ optimize: { minify: isProd } })],
 };
 
 export default config;

@@ -28,33 +28,48 @@ import { StaticAssetsLive, StaticAssetsMiddleware } from "./static-assets.ts";
 import { NodeSdkLive } from "./tracing.ts";
 import { UuidLive } from "./uuid.ts";
 
+const NotFoundHTML = Effect.gen(function* () {
+	const fs = yield* FileSystem.FileSystem;
+	return yield* fs.readFileString(`${process.cwd()}/src/pages/404.html`).pipe(
+		Effect.catchTags({
+			SystemError: () => fs.readFileString(`${import.meta.dirname}/404.html`),
+		}),
+	);
+});
+
+const InternalServerErrorHTML = Effect.gen(function* () {
+	const fs = yield* FileSystem.FileSystem;
+	return yield* fs.readFileString(`${process.cwd()}/src/pages/500.html`).pipe(
+		Effect.catchTags({
+			SystemError: () => fs.readFileString(`${import.meta.dirname}/500.html`),
+		}),
+	);
+});
+
 const router = HttpRouter.empty.pipe(
 	StaticAssetsMiddleware,
 	RouteMiddleware,
 	HttpMiddleware.xForwardedHeaders,
 	Effect.catchTags({
 		RouteNotFound: () =>
-			Effect.gen(function* () {
-				const fs = yield* FileSystem.FileSystem;
-				const html = yield* fs.readFileString(
-					`${process.cwd()}/src/pages/404.html`,
-				);
-
-				return HttpServerResponse.text(html, {
-					contentType: "text/html",
-					status: 404,
-				});
-			}),
+			NotFoundHTML.pipe(
+				Effect.map((html) =>
+					HttpServerResponse.text(html, {
+						contentType: "text/html",
+						status: 404,
+					}),
+				),
+			),
 	}),
 	Effect.catchAllCause((cause) => {
 		return Effect.gen(function* () {
-			const fs = yield* FileSystem.FileSystem;
-			let html = yield* fs.readFileString(
-				`${process.cwd()}/src/pages/500.html`,
-			);
+			yield* Effect.logError(cause);
 
-			// todo if is dev...
-			html = html.replace("<!--stack-->", cause.toString());
+			let html = yield* InternalServerErrorHTML;
+
+			if (process.env.NODE_ENV !== "production") {
+				html = html.replace("<!--stack-->", cause.toString());
+			}
 
 			return HttpServerResponse.text(html, {
 				contentType: "text/html",
@@ -95,13 +110,13 @@ export const server: Layer.Layer<
 // behavior when importing these during routing.
 export const warmUpServerImports = Effect.gen(function* () {
 	const manifest = yield* Effect.promise(() =>
-		import(`${process.cwd()}/dist/server/manifest.json`, {
+		import(`${process.cwd()}/build/server/manifest.json`, {
 			with: { type: "json" },
 		}).then((mod) => mod.default),
 	);
 	const importPaths = Object.keys(manifest)
 		.filter((path) => path.endsWith(".js"))
-		.map((path) => `${process.cwd()}/dist/server/${path}`);
+		.map((path) => `${process.cwd()}/build/server/${path}`);
 	yield* Effect.all(
 		importPaths.map((path) => Effect.promise(() => import(path))),
 	);

@@ -10,7 +10,7 @@ export class ImportMap extends Context.Tag("ImportMap")<
 >() {}
 
 export const getImportMap = Effect.promise(() =>
-	import(`${process.cwd()}/dist/client/importmap.json`, {
+	import(`${process.cwd()}/build/client/importmap.json`, {
 		with: { type: "json" },
 	}).then((mod) => mod.default),
 );

@@ -18,17 +18,30 @@ export const ProvidedBuildConfig = tryLoadModule<BuildConfig>(
 	true,
 );
 
+export const OutDir = Effect.gen(function* () {
+	const providedBuildConfig = yield* ProvidedBuildConfig;
+	return providedBuildConfig._tag === "Some"
+		? (providedBuildConfig.value.outDir ?? "build")
+		: "build";
+});
+
 export const build = Effect.gen(function* () {
 	yield* Effect.logInfo("Building...");
 	const fs = yield* FileSystem.FileSystem;
 	const providedBuildConfig = yield* ProvidedBuildConfig;
+
+	const outDir = yield* OutDir;
+	const outDirExists = yield* fs.exists(`${process.cwd()}/${outDir}`);
+	if (outDirExists) {
+		yield* fs.remove(`${process.cwd()}/${outDir}`, { recursive: true });
+	}
 
 	const configs = definePluginConfig(
 		Option.getOrUndefined(providedBuildConfig),
 	);
 
 	yield* Effect.all(
-		["dist/server", "dist/client"].map((path) =>
+		[`${outDir}/server`, `${outDir}/client`].map((path) =>
 			fs.makeDirectory(`${process.cwd()}/${path}`, {
 				recursive: true,
 			}),
@@ -74,7 +87,9 @@ export const build = Effect.gen(function* () {
 		}
 
 		const fileSize = yield* fs
-			.readFile(`${process.cwd()}/dist/client/${clientOutputElement.fileName}`)
+			.readFile(
+				`${process.cwd()}/${outDir}/client/${clientOutputElement.fileName}`,
+			)
 			.pipe(
 				Effect.map((buffer) => buffer.byteLength),
 				Effect.map((byteLength) => byteLength / 1024),
@@ -89,12 +104,12 @@ export const build = Effect.gen(function* () {
 		let compressedSize: string | undefined;
 		if (
 			yield* fs.exists(
-				`${process.cwd()}/dist/client/compressed/${clientOutputElement.fileName}`,
+				`${process.cwd()}/${outDir}/client/compressed/${clientOutputElement.fileName}`,
 			)
 		) {
 			compressedSize = yield* fs
 				.readFile(
-					`${process.cwd()}/dist/client/compressed/${clientOutputElement.fileName}`,
+					`${process.cwd()}/${outDir}/client/compressed/${clientOutputElement.fileName}`,
 				)
 				.pipe(
 					Effect.map((buffer) => buffer.byteLength),
@@ -109,7 +124,7 @@ export const build = Effect.gen(function* () {
 		}
 
 		clientResults.push({
-			path: `/dist/client/${clientOutputElement.fileName}`,
+			path: `/${outDir}/client/${clientOutputElement.fileName}`,
 			size: fileSize,
 			compressed: compressedSize,
 		});
@@ -134,14 +149,16 @@ export const build = Effect.gen(function* () {
 		}
 
 		const fileSize = yield* fs
-			.readFile(`${process.cwd()}/dist/server/${serverOutputElement.fileName}`)
+			.readFile(
+				`${process.cwd()}/${outDir}/server/${serverOutputElement.fileName}`,
+			)
 			.pipe(
 				Effect.map((buffer) => buffer.byteLength),
 				Effect.map((byteLength) => `${(byteLength / 1024).toFixed(2)}kb`),
 			);
 
 		serverResults.push({
-			path: `/dist/server/${serverOutputElement.fileName}`,
+			path: `/${outDir}/server/${serverOutputElement.fileName}`,
 			size: fileSize,
 		});
 	}

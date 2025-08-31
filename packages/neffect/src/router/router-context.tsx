@@ -1,3 +1,5 @@
+"use client";
+
 import type { Signal } from "@preact/signals";
 import { createContext, type PropsWithChildren, useEffect } from "react";
 import { handleRouteChange } from "./handle-route-change.tsx";
@@ -18,7 +20,7 @@ export function RouterProvider({
 		window.onpopstate = (e: PopStateEvent) => {
 			void handleRouteChange(value, e.state);
 		};
-	}, [value.params.value, value.query.value]);
+	}, [value]);
 
 	return (
 		<RouterContext.Provider value={value}>{children}</RouterContext.Provider>

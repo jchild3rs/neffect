@@ -35,36 +35,36 @@
 	},
 	"exports": {
 		"./app": {
-			"import": "./dist/esm/_app.js",
-			"types": "./dist/types/server/_app.d.ts"
+			"import": "./build/esm/_app.js",
+			"types": "./build/types/server/_app.d.ts"
 		},
 		"./cli": {
-			"import": "./dist/esm/cli.js",
-			"types": "./dist/types/cli.d.ts"
+			"import": "./build/esm/cli.js",
+			"types": "./build/types/cli.d.ts"
 		},
 		"./document": {
-			"import": "./dist/esm/_document.js",
-			"types": "./dist/types/server/_document.d.ts"
+			"import": "./build/esm/_document.js",
+			"types": "./build/types/server/_document.d.ts"
 		},
 		"./link": {
-			"import": "./dist/esm/link.js",
-			"types": "./dist/types/router/link.d.ts"
+			"import": "./build/esm/link.js",
+			"types": "./build/types/router/link.d.ts"
 		},
 		"./plugin": {
-			"import": "./dist/esm/plugin.js",
-			"types": "./dist/types/plugin.d.ts"
+			"import": "./build/esm/plugin.js",
+			"types": "./build/types/plugin.d.ts"
 		},
 		"./server": {
-			"import": "./dist/esm/server.js",
-			"types": "./dist/types/server/server.d.ts"
+			"import": "./build/esm/server.js",
+			"types": "./build/types/server/server.d.ts"
 		},
 		"./server/*": {
-			"import": "./dist/esm/server/*.js",
-			"types": "./dist/types/server/*.d.ts"
+			"import": "./build/esm/server/*.js",
+			"types": "./build/types/server/*.d.ts"
 		},
 		"./use-*": {
-			"import": "./dist/esm/router/use-*.js",
-			"types": "./dist/types/router/use-*.d.ts"
+			"import": "./build/esm/router/use-*.js",
+			"types": "./build/types/router/use-*.d.ts"
 		}
 	}
 }

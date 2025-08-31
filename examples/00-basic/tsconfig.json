@@ -11,6 +11,6 @@
 			"react-dom/*": ["../../node_modules/preact/compat/*"]
 		}
 	},
-	"include": ["src", "app.config.ts"],
+	"include": ["src"],
 	"references": [{ "path": "../../packages/neffect/tsconfig.json" }]
 }

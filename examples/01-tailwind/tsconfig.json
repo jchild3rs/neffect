@@ -2,6 +2,7 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"noEmit": true,
+		"types": ["node"],
 		"tsBuildInfoFile": "../../node_modules/.tmp/examples-basic.tsconfig.tsbuildinfo",
 		"baseUrl": "./",
 		"paths": {

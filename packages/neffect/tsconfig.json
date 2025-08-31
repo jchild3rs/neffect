@@ -1,7 +1,7 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"declarationDir": "dist/types",
+		"declarationDir": "build/types",
 		"tsBuildInfoFile": "../../node_modules/.tmp/neffect.tsconfig.tsbuildinfo",
 		"types": ["node"],
 		"rootDir": "./src",

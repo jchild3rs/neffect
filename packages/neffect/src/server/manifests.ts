@@ -8,7 +8,7 @@ export class ClientManifest extends Context.Tag("ClientManifest")<
 
 export const getClientManifest = Effect.promise(
 	() =>
-		import(`${process.cwd()}/dist/client/manifest.json`, {
+		import(`${process.cwd()}/build/client/manifest.json`, {
 			with: { type: "json" },
 		}).then((mod) => mod.default) as unknown as Promise<Manifest>,
 );
@@ -29,7 +29,7 @@ export class ServerManifest extends Context.Tag("ServerManifest")<
 
 export const getServerManifest = Effect.promise(
 	() =>
-		import(`${process.cwd()}/dist/server/manifest.json`, {
+		import(`${process.cwd()}/build/server/manifest.json`, {
 			with: { type: "json" },
 		}).then((mod) => mod.default) as unknown as Promise<Manifest>,
 );

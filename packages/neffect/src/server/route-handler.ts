@@ -9,7 +9,7 @@ export class RouteHandler extends Context.Tag("RouteHandler")<
 export const RouteHandlerLive = Layer.effect(
 	RouteHandler,
 	Effect.promise(() =>
-		import(`${process.cwd()}/dist/server/main.js`).then(
+		import(`${process.cwd()}/build/server/main.js`).then(
 			(mod) => mod.handle as Handler,
 		),
 	),

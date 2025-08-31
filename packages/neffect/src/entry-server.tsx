@@ -1,12 +1,12 @@
 import "urlpattern-polyfill";
 import { randomBytes } from "node:crypto";
 import { HttpServerResponse } from "@effect/platform";
-import { NodeHttpClient } from "@effect/platform-node";
 import { signal } from "@preact/signals";
 import { Chunk, Data, Effect, Option, Stream } from "effect";
 import type { FunctionComponent } from "preact";
 import { renderToReadableStream } from "preact-render-to-string/stream";
 import type { RouterContext } from "./router/router-context.tsx";
+import { OutDir } from './scripts/build.ts';
 import type { AppComponent } from "./server/_app.tsx";
 import {
 	type DocumentComponent,
@@ -81,11 +81,14 @@ export const handle = ({
 	query: Record<string, string | string[] | undefined>;
 }) =>
 	Effect.gen(function* () {
+		const outDir =yield* OutDir
 		const Page = yield* loadModule<RouteComponent>(
-			`/dist/server/${route.file}`,
+			`/${outDir}/server/${route.file}`,
 			true,
 		);
-		const { data, metadata } = yield* getPageData(`/dist/server/${route.file}`);
+		const { data, metadata } = yield* getPageData(
+			`/${outDir}/server/${route.file}`,
+		);
 		const pageProps = { data, query, params };
 
 		const routeContext: RouterContext = {
@@ -95,32 +98,36 @@ export const handle = ({
 		};
 
 		const BaseDocument = yield* loadModule<DocumentComponent>(
-			"/dist/server/base/_document.js",
+			`/${outDir}/server/base/_document.js`,
 			true,
 		);
 
 		const BaseApp = yield* loadModule<AppComponent>(
-			"/dist/server/base/_app.js",
+			`/${outDir}/server/base/_app.js`,
 			true,
 		);
 
 		const Document = Option.getOrElse(
 			yield* tryLoadModule<DocumentComponent>(
-				`/dist/server/pages/_document.js`,
+				`/${outDir}/server/pages/_document.js`,
 				true,
 			),
 			() => BaseDocument,
 		);
 
 		const App = yield* tryLoadModule<FunctionComponent>(
-			`/dist/server/pages/_app.js`,
+			`/${outDir}/server/pages/_app.js`,
 			true,
 		);
 
 		const nonce = randomBytes(16).toString("base64");
+
 		const head = (
 			<DocumentHead routeCssEntry={routeCssEntry}>
 				<title>{metadata.title}</title>
+				{metadata.description && (
+					<meta name="description" content={metadata.description} />
+				)}
 			</DocumentHead>
 		);
 
@@ -180,6 +187,6 @@ export const handle = ({
 				},
 			},
 		);
-	}).pipe(Effect.provide(NodeHttpClient.layerUndici));
+	});
 
 export type Handler = typeof handle;

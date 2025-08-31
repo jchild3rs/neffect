@@ -13,6 +13,14 @@ import type { Manifest } from "./types.ts";
 
 export interface BuildConfig {
 	/**
+	 * Output directory for the build
+	 *
+	 * @default build
+	 * @since 0.1.0
+	 */
+	outDir?: string;
+
+	/**
 	 * The global stylesheet to use for all pages
 	 *
 	 * @default styles.css
@@ -64,13 +72,14 @@ export interface BuildConfig {
 }
 
 const postcssPlugin = (
+	outDir: string,
 	_minify?: boolean,
 	providedPlugins: AcceptedPlugin[] = [],
 ): Plugin => ({
 	name: "postcss",
 	async transform(code, id) {
 		if (id.endsWith(".css")) {
-			const path = `${process.cwd()}/dist/client${id}`;
+			const path = `${process.cwd()}/${outDir}/client${id}`;
 			const result = await postcss([
 				...providedPlugins,
 				// tailwindPlugin({
@@ -128,7 +137,7 @@ const manifestPlugin: Plugin = {
 	name: "write-manifest-json",
 	generateBundle(options, bundle) {
 		const manifest: Manifest = {};
-		const outDir = `${process.cwd()}/${options.dir ?? "dist"}`;
+		const outDir = `${process.cwd()}/${options.dir ?? "build"}`;
 
 		for (const [_key, entry] of Object.entries(bundle)) {
 			manifest[entry.fileName] = {
@@ -138,17 +147,25 @@ const manifestPlugin: Plugin = {
 			};
 		}
 
+		if (!existsSync(outDir)) {
+			mkdirSync(outDir, { recursive: true });
+		}
 		writeFileSync(`${outDir}/manifest.json`, JSON.stringify(manifest));
 	},
 };
 
 const copyPublicFolder: Plugin = {
 	name: "copy-public-folder",
-	writeBundle() {
+	writeBundle(options) {
+		const outDir = options.dir ?? "build";
 		if (existsSync(`${process.cwd()}/public`)) {
-			cpSync(`${process.cwd()}/public`, `${process.cwd()}/dist/client/public`, {
-				recursive: true,
-			});
+			cpSync(
+				`${process.cwd()}/public`,
+				`${process.cwd()}/${outDir}/client/public`,
+				{
+					recursive: true,
+				},
+			);
 		}
 	},
 };
@@ -175,6 +192,7 @@ export function definePluginConfig(
 	const routePaths = globSync(["src/pages/**/*.tsx"], {
 		cwd: process.cwd(),
 	});
+	const outDir = config?.outDir ?? "build";
 
 	const rolldownOptions = config?.rolldownOptions ?? {};
 
@@ -259,12 +277,12 @@ export function definePluginConfig(
 				...sharedOptions.input,
 			},
 			output: {
-				dir: "dist/client",
+				dir: `${outDir}/client`,
 			},
 			platform: "browser",
 			plugins: [
 				...sharedOptions.plugins,
-				postcssPlugin(config?.minifyCss, config?.postcssPlugins),
+				postcssPlugin(outDir, config?.minifyCss, config?.postcssPlugins),
 				...(config?.compress ? [gzipPlugin] : [undefined]),
 				copyPublicFolder,
 			],
@@ -278,7 +296,7 @@ export function definePluginConfig(
 				...sharedOptions.input,
 			},
 			output: {
-				dir: "dist/server",
+				dir: `${outDir}/server`,
 			},
 			platform: "node",
 		},

@@ -5,6 +5,7 @@ import {
 	HttpServerResponse,
 } from "@effect/platform";
 import { Context, Effect, Layer } from "effect";
+import { OutDir } from "../scripts/build.ts";
 import { PublicFilesMap } from "./public-files.ts";
 
 export class StaticAssets extends Context.Tag("StaticAssets")<
@@ -17,7 +18,9 @@ export const StaticAssetsLive = Layer.effect(
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 
-		const files = yield* fs.readDirectory(`${process.cwd()}/dist/client`, {
+		const outDir = yield* OutDir;
+
+		const files = yield* fs.readDirectory(`${process.cwd()}/${outDir}/client`, {
 			recursive: true,
 		});
 
@@ -33,10 +36,11 @@ export const StaticAssetsMiddleware = HttpMiddleware.make((app) =>
 	Effect.gen(function* () {
 		const request = yield* HttpServerRequest.HttpServerRequest;
 		const fs = yield* FileSystem.FileSystem;
+		const outDir = yield* OutDir;
 
 		if (request.url.includes("/_assets/")) {
 			const hasCompressed = yield* fs.exists(
-				`${process.cwd()}/dist/client/compressed`,
+				`${process.cwd()}/${outDir}/client/compressed`,
 			);
 			const acceptEncoding = request.headers["accept-encoding"] || "";
 			const responseHeaders: Record<string, string> = {};
@@ -46,13 +50,13 @@ export const StaticAssetsMiddleware = HttpMiddleware.make((app) =>
 				responseHeaders["Content-Encoding"] = "zstd";
 
 				return yield* HttpServerResponse.file(
-					`${process.cwd()}/dist/client/${isCompressed ? "compressed/" : ""}${path}`,
+					`${process.cwd()}/${outDir}/client/${isCompressed ? "compressed/" : ""}${path}`,
 					{ headers: responseHeaders },
 				);
 			}
 
 			return yield* HttpServerResponse.file(
-				`${process.cwd()}/dist/client/${path}`,
+				`${process.cwd()}/${outDir}/client/${path}`,
 			);
 		}
 
@@ -62,7 +66,7 @@ export const StaticAssetsMiddleware = HttpMiddleware.make((app) =>
 
 		if (publicFilesMap[lastPart]) {
 			return yield* HttpServerResponse.file(
-				`${process.cwd()}/dist/client/public/${lastPart}`,
+				`${process.cwd()}/${outDir}/client/public/${lastPart}`,
 			);
 		}
 

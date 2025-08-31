@@ -11,7 +11,7 @@ const config: RolldownOptions = {
 		plugin: "./src/plugin.ts",
 	},
 	output: {
-		dir: "dist/esm",
+		dir: "build/esm",
 		format: "esm",
 	},
 	resolve: {
