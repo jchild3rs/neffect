@@ -1,11 +1,9 @@
-#!/usr/bin/env node
-
 import { FileSystem } from "@effect/platform";
 import { NodeContext, NodeRuntime } from "@effect/platform-node";
-import { Effect, Option } from "effect";
+import { Effect } from "effect";
 import { type RolldownBuild, type RolldownOptions, rolldown } from "rolldown";
-import { type BuildConfig, definePluginConfig } from "../plugin.ts";
-import { tryLoadModule } from "../server/load-module.ts";
+import { ProvidedBuildConfig, ProvidedBuildConfigLive } from "../app-config.ts";
+import { definePluginConfig } from "../plugin.ts";
 
 interface BundleResult {
 	path: string;
@@ -13,50 +11,18 @@ interface BundleResult {
 	compressed?: string | undefined;
 }
 
-export const ProvidedBuildConfig = tryLoadModule<BuildConfig>(
-	"/app.config.ts",
-	true,
-);
-
-export const outDirFallback = "build";
-export const OutDir = Effect.gen(function* () {
-	const providedBuildConfig = yield* ProvidedBuildConfig;
-	return providedBuildConfig._tag === "Some"
-		? (providedBuildConfig.value.outDir ?? outDirFallback)
-		: outDirFallback;
-});
-
-export const rootDirFallback = "src";
-export const RootDir = Effect.gen(function* () {
-	const providedBuildConfig = yield* ProvidedBuildConfig;
-	return providedBuildConfig._tag === "Some"
-		? (providedBuildConfig.value.rootDir ?? rootDirFallback)
-		: rootDirFallback;
-});
-
-export const routeDirFallback = "pages";
-export const RouteDir = Effect.gen(function* () {
-	const providedBuildConfig = yield* ProvidedBuildConfig;
-
-	return providedBuildConfig._tag === "Some"
-		? (providedBuildConfig.value.routeDir ?? routeDirFallback)
-		: routeDirFallback;
-});
-
 export const build = Effect.gen(function* () {
 	yield* Effect.logInfo("Building...");
 	const fs = yield* FileSystem.FileSystem;
 	const providedBuildConfig = yield* ProvidedBuildConfig;
+	const { outDir } = providedBuildConfig;
 
-	const outDir = yield* OutDir;
 	const outDirExists = yield* fs.exists(`${process.cwd()}/${outDir}`);
 	if (outDirExists) {
 		yield* fs.remove(`${process.cwd()}/${outDir}`, { recursive: true });
 	}
 
-	const configs = definePluginConfig(
-		Option.getOrUndefined(providedBuildConfig),
-	);
+	const configs = definePluginConfig(providedBuildConfig);
 
 	yield* Effect.all(
 		[`${outDir}/server`, `${outDir}/client`].map((path) =>
@@ -195,7 +161,12 @@ export const build = Effect.gen(function* () {
 });
 
 if (import.meta.main) {
-	NodeRuntime.runMain(build.pipe(Effect.provide(NodeContext.layer)));
+	NodeRuntime.runMain(
+		build.pipe(
+			Effect.provide(ProvidedBuildConfigLive),
+			Effect.provide(NodeContext.layer),
+		),
+	);
 }
 
 export default build;

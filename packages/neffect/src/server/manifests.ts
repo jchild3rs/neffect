@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect";
-import { RouteDir } from "../scripts/build.ts";
+import { ProvidedBuildConfig } from "../app-config.ts";
 import type { AssetChunk, Manifest, ManifestChunk } from "../types.ts";
 
 export class ClientManifest extends Context.Tag("ClientManifest")<
@@ -40,7 +40,7 @@ export const ServerManifestLive = Layer.effect(
 );
 export const getRouteManifest = Effect.gen(function* () {
 	const serverManifest = yield* getServerManifest;
-	const routeDir = yield* RouteDir;
+	const { routeDir } = yield* ProvidedBuildConfig;
 
 	return Object.entries(serverManifest).reduce<
 		Record<string, ManifestChunk | AssetChunk>

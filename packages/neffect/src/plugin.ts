@@ -9,10 +9,79 @@ import { zstdCompressSync } from "node:zlib";
 import postcss, { type AcceptedPlugin } from "postcss";
 import type { Plugin, RolldownOptions } from "rolldown";
 import esbuild from "rollup-plugin-esbuild";
-import { outDirFallback, routeDirFallback } from "./scripts/build.ts";
+import {
+	assetBaseUrlFallback,
+	outDirFallback,
+	publicDirFallback,
+	routeDirFallback,
+} from "./app-config.ts";
 import type { Manifest } from "./types.ts";
 
 export interface BuildConfig {
+	/**
+	 * The base URL to use for serving static assets
+	 *
+	 * @since 0.1.0
+	 * @default /_assets/
+	 * @example
+	 * ```ts
+	 * defineConfig({
+	 *   assetBaseUrl: "https://cdn.example.com/assets/"
+	 * })
+	 * ```
+	 */
+	assetBaseUrl?: `${"/" | `${string}://`}${string}/`;
+
+	/**
+	 * Compress and serve the output files with ZStandard
+	 *
+	 * @since 0.1.0
+	 */
+	compress?: boolean;
+
+	/**
+	 * The global stylesheet to use for all pages
+	 *
+	 * @default "styles.css"
+	 * @since 0.1.0
+	 */
+	globalStylesheet?: `${string}.css`;
+
+	/**
+	 * Minify the output of CSS files
+	 *
+	 * @since 0.1.0
+	 */
+	minifyCss?: boolean;
+
+	/**
+	 * Output directory for the build
+	 *
+	 * @default "build"
+	 * @since 0.1.0
+	 */
+	outDir?: string;
+
+	/**
+	 * PostCSS plugin list
+	 *
+	 * @since 0.1.0
+	 */
+	postcssPlugins?: AcceptedPlugin[];
+
+	/**
+	 * @default "public"
+	 * @since 0.1.0
+	 */
+	publicDir?: string;
+
+	/**
+	 * Additional build options (rolldown)
+	 *
+	 * @since 0.1.0
+	 */
+	rolldownOptions?: RolldownOptions;
+
 	/**
 	 * @default "src"
 	 * @since 0.1.0
@@ -26,63 +95,6 @@ export interface BuildConfig {
 	 * @since 0.1.0
 	 */
 	routeDir?: string;
-	/**
-	 * Output directory for the build
-	 *
-	 * @default "build"
-	 * @since 0.1.0
-	 */
-	outDir?: string;
-
-	/**
-	 * The global stylesheet to use for all pages
-	 *
-	 * @default "styles.css"
-	 * @since 0.1.0
-	 */
-	globalStylesheet?: `${string}.css`;
-
-	/**
-	 * Additional build options (rolldown)
-	 *
-	 * @since 0.1.0
-	 */
-	rolldownOptions?: RolldownOptions;
-
-	/**
-	 * Compress and serve the output files with ZStandard
-	 *
-	 * @since 0.1.0
-	 */
-	compress?: boolean;
-
-	/**
-	 * Minify the output of CSS files
-	 *
-	 * @since 0.1.0
-	 */
-	minifyCss?: boolean;
-
-	/**
-	 * The base URL to use for serving static assets
-	 *
-	 * @since 0.1.0
-	 * @default /_assets/
-	 * @example
-	 * ```ts
-	 * defineConfig({
-	 *   assetBaseUrl: "https://cdn.example.com/assets/"
-	 * })
-	 * ```
-	 */
-	assetBaseUrl?: string;
-
-	/**
-	 * PostCSS plugin list
-	 *
-	 * @since 0.1.0
-	 */
-	postcssPlugins?: AcceptedPlugin[];
 }
 
 const postcssPlugin = (
@@ -129,17 +141,22 @@ const manifestPlugin: Plugin = {
 	},
 };
 
-const copyPublicFolder: Plugin = {
-	name: "copy-public-folder",
-	writeBundle(options) {
-		const outDir = options.dir ?? "build";
-		if (existsSync(`${process.cwd()}/public`)) {
-			cpSync(`${process.cwd()}/public`, `${process.cwd()}/${outDir}/public`, {
-				recursive: true,
-			});
-		}
-	},
-};
+const copyPublicFolder = (publicDir = publicDirFallback) =>
+	({
+		name: "copy-public-folder",
+		writeBundle(options) {
+			const outDir = options.dir ?? "build";
+			if (existsSync(`${process.cwd()}/${publicDir}`)) {
+				cpSync(
+					`${process.cwd()}/${publicDir}`,
+					`${process.cwd()}/${outDir}/${publicDir}`,
+					{
+						recursive: true,
+					},
+				);
+			}
+		},
+	}) satisfies Plugin;
 
 const gzipPlugin: Plugin = {
 	name: "gzip",
@@ -236,7 +253,7 @@ export function definePluginConfig(
 			...sharedOptions,
 			experimental: {
 				chunkImportMap: {
-					baseUrl: "/_assets/",
+					baseUrl: config?.assetBaseUrl ?? assetBaseUrlFallback,
 					fileName: "importmap.json",
 				},
 				incrementalBuild: true,
@@ -256,7 +273,7 @@ export function definePluginConfig(
 				...sharedOptions.plugins,
 				postcssPlugin(outDir, config?.minifyCss, config?.postcssPlugins),
 				...(config?.compress ? [gzipPlugin] : [undefined]),
-				copyPublicFolder,
+				copyPublicFolder(config?.publicDir),
 			],
 		},
 		{

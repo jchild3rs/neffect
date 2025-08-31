@@ -5,7 +5,7 @@ import {
 	HttpServerResponse,
 } from "@effect/platform";
 import { Context, Effect, Layer } from "effect";
-import { OutDir } from "../scripts/build.ts";
+import { ProvidedBuildConfig } from "../app-config.ts";
 import { PublicFilesMap } from "./public-files.ts";
 
 export class StaticAssets extends Context.Tag("StaticAssets")<
@@ -18,7 +18,7 @@ export const StaticAssetsLive = Layer.effect(
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 
-		const outDir = yield* OutDir;
+		const { outDir } = yield* ProvidedBuildConfig;
 
 		const files = yield* fs.readDirectory(`${process.cwd()}/${outDir}/client`, {
 			recursive: true,
@@ -36,16 +36,16 @@ export const StaticAssetsMiddleware = HttpMiddleware.make((app) =>
 	Effect.gen(function* () {
 		const request = yield* HttpServerRequest.HttpServerRequest;
 		const fs = yield* FileSystem.FileSystem;
-		const outDir = yield* OutDir;
+		const { assetBaseUrl, outDir, publicDir } = yield* ProvidedBuildConfig;
 
-		if (request.url.includes("/_assets/")) {
+		if (request.url.includes(assetBaseUrl)) {
 			const hasCompressed = yield* fs.exists(
 				`${process.cwd()}/${outDir}/client/compressed`,
 			);
 			const acceptEncoding = request.headers["accept-encoding"] || "";
 			const responseHeaders: Record<string, string> = {};
 			const isCompressed = hasCompressed && acceptEncoding.includes("zstd");
-			const path = request.url.split("_assets/")[1];
+			const path = request.url.split(assetBaseUrl)[1];
 			if (isCompressed) {
 				responseHeaders["Content-Encoding"] = "zstd";
 
@@ -66,7 +66,7 @@ export const StaticAssetsMiddleware = HttpMiddleware.make((app) =>
 
 		if (publicFilesMap[lastPart]) {
 			return yield* HttpServerResponse.file(
-				`${process.cwd()}/${outDir}/client/public/${lastPart}`,
+				`${process.cwd()}/${outDir}/client/${publicDir}/${lastPart}`,
 			);
 		}
 

@@ -14,7 +14,7 @@ import {
 	NodeRuntime,
 } from "@effect/platform-node";
 import { type ConfigError, Effect, Layer } from "effect";
-import { RootDir, RouteDir } from "../scripts/build.ts";
+import { ProvidedBuildConfig, ProvidedBuildConfigLive } from "../app-config.ts";
 import { serverPortConfig } from "./config.ts";
 import { ImportMapLive } from "./import-map.ts";
 import {
@@ -29,10 +29,11 @@ import { StaticAssetsLive, StaticAssetsMiddleware } from "./static-assets.ts";
 import { NodeSdkLive } from "./tracing.ts";
 import { UuidLive } from "./uuid.ts";
 
+const AssetBaseUrlToken = "%ASSET_BASE_URL%" as const;
+
 const NotFoundHTML = Effect.gen(function* () {
 	const fs = yield* FileSystem.FileSystem;
-	const routeDir = yield* RouteDir;
-	const rootDir = yield* RootDir;
+	const { assetBaseUrl, routeDir, rootDir } = yield* ProvidedBuildConfig;
 
 	return yield* fs
 		.readFileString(`${process.cwd()}/${rootDir}/${routeDir}/404.html`)
@@ -40,13 +41,13 @@ const NotFoundHTML = Effect.gen(function* () {
 			Effect.catchTags({
 				SystemError: () => fs.readFileString(`${import.meta.dirname}/404.html`),
 			}),
+			Effect.map((str) => str.replace(AssetBaseUrlToken, assetBaseUrl)),
 		);
 });
 
 const InternalServerErrorHTML = Effect.gen(function* () {
 	const fs = yield* FileSystem.FileSystem;
-	const routeDir = yield* RouteDir;
-	const rootDir = yield* RootDir;
+	const { assetBaseUrl, routeDir, rootDir } = yield* ProvidedBuildConfig;
 
 	return yield* fs
 		.readFileString(`${process.cwd()}/${rootDir}/${routeDir}/500.html`)
@@ -54,6 +55,7 @@ const InternalServerErrorHTML = Effect.gen(function* () {
 			Effect.catchTags({
 				SystemError: () => fs.readFileString(`${import.meta.dirname}/500.html`),
 			}),
+			Effect.map((str) => str.replace(AssetBaseUrlToken, assetBaseUrl)),
 		);
 });
 
@@ -94,6 +96,7 @@ const router = HttpRouter.empty.pipe(
 	Layer.provide(RouteManifestLive),
 	Layer.provide(ServerManifestLive),
 	Layer.provide(PublicFilesMapLive),
+	Layer.provide(ProvidedBuildConfigLive),
 	Layer.provide(ClientManifestLive),
 	Layer.provide(RouteHandlerLive),
 	Layer.provide(ImportMapLive),

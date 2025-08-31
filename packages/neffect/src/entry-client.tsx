@@ -7,6 +7,7 @@ declare global {
 		__hasProvidedApp: boolean;
 		__loadCache: Record<string, unknown>;
 		__routeDir: string;
+		__assetBaseUrl: `${string}/`;
 	}
 }
 
@@ -20,9 +21,9 @@ async function mount() {
 	let ProvidedApp: FunctionComponent<PropsWithChildren> | null = null;
 	try {
 		if (window.__hasProvidedApp) {
-			ProvidedApp = await import(`/_assets/${window.__routeDir}/_app.js`).then(
-				(mod) => mod.default,
-			);
+			ProvidedApp = await import(
+				`${window.__assetBaseUrl}${window.__routeDir}/_app.js`
+			).then((mod) => mod.default);
 		}
 	} catch (_e) {
 		ProvidedApp = null;

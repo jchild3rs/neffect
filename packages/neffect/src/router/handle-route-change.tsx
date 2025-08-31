@@ -17,9 +17,9 @@ export async function handleRouteChange(
 	let ProvidedApp: FunctionComponent<PropsWithChildren> | null = null;
 	try {
 		if (window.__hasProvidedApp) {
-			ProvidedApp = await import(`/_assets/${window.__routeDir}/_app.js`).then(
-				(mod) => mod.default,
-			);
+			ProvidedApp = await import(
+				`${window.__assetBaseUrl}${window.__routeDir}/_app.js`
+			).then((mod) => mod.default);
 		}
 	} catch (_e) {
 		ProvidedApp = null;
@@ -46,7 +46,7 @@ export async function handleRouteChange(
 		if (root) {
 			routeContext.params.value = match.pathname.groups;
 
-			const Page = await import(`/_assets/${route.file}`).then(
+			const Page = await import(`${window.__assetBaseUrl}${route.file}`).then(
 				(mod) => mod.default,
 			);
 
@@ -69,7 +69,7 @@ export async function handleRouteChange(
 				"route-css",
 			) as HTMLLinkElement | null;
 			if (asset) {
-				const newCssLinkHref = `/_assets/${route.file.replace(".js", ".css")}`;
+				const newCssLinkHref = `${window.__assetBaseUrl}${route.file.replace(".js", ".css")}`;
 				if (cssLink && !cssLink.href.endsWith(newCssLinkHref)) {
 					cssLink.href = newCssLinkHref;
 				}

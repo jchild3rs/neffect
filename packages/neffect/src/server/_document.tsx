@@ -9,6 +9,7 @@ export interface DocumentProps {
 	route: ManifestChunk;
 	routeData?: unknown;
 	routeDir: string;
+	assetBaseUrl: string;
 	routeContext: RouterContext;
 	head: ReactElement | null;
 	body: ReactElement | null;
@@ -28,13 +29,14 @@ export type ProvidedDocumentProps = Pick<
 export function DocumentHead(
 	props: PropsWithChildren<{
 		routeCssEntry?: ManifestChunk | undefined;
+		assetBaseUrl: string;
 	}>,
 ) {
 	return (
 		<head>
 			<meta charSet="UTF-8" />
 			<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-			<link rel="stylesheet" href="/_assets/styles.css" />
+			<link rel="stylesheet" href={`${props.assetBaseUrl}styles.css`} />
 			<link
 				rel="stylesheet"
 				id="route-css"
@@ -53,7 +55,10 @@ export function DocumentHead(
 export default function Document(props: DocumentProps) {
 	return (
 		<html lang="en">
-			<DocumentHead routeCssEntry={props.routeCssEntry}>
+			<DocumentHead
+				assetBaseUrl={props.assetBaseUrl}
+				routeCssEntry={props.routeCssEntry}
+			>
 				{props.head}
 			</DocumentHead>
 			<body>
@@ -79,9 +84,9 @@ export function DocumentScripts(
 				dangerouslySetInnerHTML={{
 					__html: JSON.stringify({
 						routeContext: props.routeContext,
-						fileImport: `/_assets/${props.route.file}`,
+						fileImport: `${props.assetBaseUrl}${props.route.file}`,
 						cssImport: props.routeCssEntry
-							? `/_assets/${props.routeCssEntry.file}`
+							? `${props.assetBaseUrl}${props.routeCssEntry.file}`
 							: null,
 					}),
 				}}
@@ -111,13 +116,18 @@ export function DocumentScripts(
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(props.importMap) }}
 			></script>
 
-			<script nonce={props.nonce} type="module" src="/_assets/main.js"></script>
+			<script
+				nonce={props.nonce}
+				type="module"
+				src={`${props.assetBaseUrl}main.js`}
+			></script>
 
 			<script
 				nonce={props.nonce}
 				dangerouslySetInnerHTML={{
 					__html: `window.__hasProvidedApp = ${props.hasProvidedApp};
-				window.__routeDir = '${props.routeDir}';`,
+				window.__routeDir = '${props.routeDir}';
+				window.__assetBaseUrl = '${props.assetBaseUrl}';`,
 				}}
 			></script>
 		</>

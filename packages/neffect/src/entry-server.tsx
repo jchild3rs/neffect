@@ -5,8 +5,8 @@ import { signal } from "@preact/signals";
 import { Chunk, Data, Effect, Option, Stream } from "effect";
 import type { FunctionComponent } from "preact";
 import { renderToReadableStream } from "preact-render-to-string/stream";
+import { ProvidedBuildConfig } from "./app-config.ts";
 import type { RouterContext } from "./router/router-context.tsx";
-import { OutDir, RouteDir } from "./scripts/build.ts";
 import type { AppComponent } from "./server/_app.tsx";
 import {
 	type DocumentComponent,
@@ -81,8 +81,7 @@ export const handle = ({
 	query: Record<string, string | string[] | undefined>;
 }) =>
 	Effect.gen(function* () {
-		const outDir = yield* OutDir;
-		const routeDir = yield* RouteDir;
+		const { assetBaseUrl, outDir, routeDir } = yield* ProvidedBuildConfig;
 		const Page = yield* loadModule<RouteComponent>(
 			`/${outDir}/server/${route.file}`,
 			true,
@@ -124,7 +123,7 @@ export const handle = ({
 		const nonce = randomBytes(16).toString("base64");
 
 		const head = (
-			<DocumentHead routeCssEntry={routeCssEntry}>
+			<DocumentHead assetBaseUrl={assetBaseUrl} routeCssEntry={routeCssEntry}>
 				<title>{metadata.title}</title>
 				{metadata.description && (
 					<meta name="description" content={metadata.description} />
@@ -134,6 +133,7 @@ export const handle = ({
 
 		const scripts = (
 			<DocumentScripts
+				assetBaseUrl={assetBaseUrl}
 				routeDir={routeDir}
 				nonce={nonce}
 				routeCssEntry={routeCssEntry}
@@ -160,6 +160,7 @@ export const handle = ({
 
 		const document = (
 			<Document
+				assetBaseUrl={assetBaseUrl}
 				nonce={nonce}
 				routeDir={routeDir}
 				routeCssEntry={routeCssEntry}

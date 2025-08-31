@@ -3,6 +3,7 @@
 import { Command } from "@effect/cli";
 import { NodeContext, NodeRuntime } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
+import { ProvidedBuildConfigLive } from "./app-config.ts";
 import build from "./scripts/build.ts";
 import dev from "./scripts/dev.ts";
 import start from "./scripts/start.ts";
@@ -39,6 +40,7 @@ const cli = Command.run(command, {
 const MainLayer = Layer.mergeAll(NodeContext.layer);
 
 cli(process.argv).pipe(
+	Effect.provide(ProvidedBuildConfigLive),
 	Effect.provide(MainLayer),
 	Effect.tapErrorCause(Effect.logError),
 	NodeRuntime.runMain,
