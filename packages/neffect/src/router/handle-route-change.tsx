@@ -17,9 +17,9 @@ export async function handleRouteChange(
 	let ProvidedApp: FunctionComponent<PropsWithChildren> | null = null;
 	try {
 		if (window.__hasProvidedApp) {
-			ProvidedApp = await import(
-				(`/_assets/${window.__routeDir}/_app.js`)
-			).then((mod) => mod.default);
+			ProvidedApp = await import(`/_assets/${window.__routeDir}/_app.js`).then(
+				(mod) => mod.default,
+			);
 		}
 	} catch (_e) {
 		ProvidedApp = null;
