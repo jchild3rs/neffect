@@ -12,6 +12,9 @@
 		"preview": {
 			"persistent": true,
 			"cache": false
+		},
+		"test": {
+			"dependsOn": ["^build"]
 		}
 	}
 }

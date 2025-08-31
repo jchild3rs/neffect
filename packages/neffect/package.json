@@ -3,7 +3,8 @@
 	"version": "0.1.0",
 	"type": "module",
 	"scripts": {
-		"build": "tsc && rolldown -c rolldown.config.ts"
+		"build": "tsc && rolldown -c rolldown.config.ts",
+		"test": "echo \"TODO\" && exit 0"
 	},
 	"dependencies": {
 		"@effect/cli": "^0.69.2",

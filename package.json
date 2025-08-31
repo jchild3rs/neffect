@@ -14,7 +14,8 @@
 	"scripts": {
 		"build": "turbo run build",
 		"check": "tsc && biome check --write",
-		"dev": "turbo run dev"
+		"dev": "turbo run dev",
+		"test": "turbo run test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.2",
