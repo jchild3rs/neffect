@@ -1,5 +1,5 @@
 import { FileSystem } from "@effect/platform";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
+import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { Effect } from "effect";
 import { type RolldownBuild, type RolldownOptions, rolldown } from "rolldown";
 import { ProvidedBuildConfig, ProvidedBuildConfigLive } from "../app-config.ts";
@@ -161,10 +161,10 @@ export const build = Effect.gen(function* () {
 });
 
 if (import.meta.main) {
-	NodeRuntime.runMain(
+	BunRuntime.runMain(
 		build.pipe(
 			Effect.provide(ProvidedBuildConfigLive),
-			Effect.provide(NodeContext.layer),
+			Effect.provide(BunContext.layer),
 		),
 	);
 }

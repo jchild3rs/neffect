@@ -8,8 +8,8 @@
 	},
 	"scripts": {
 		"build": "neffect build",
-		"dev": "PORT=3001 neffect dev",
-		"start": "NODE_ENV=production PORT=3001 neffect start"
+		"dev": "PORT=3003 neffect dev",
+		"start": "NODE_ENV=production PORT=3003 neffect start"
 	},
 	"dependencies": {
 		"neffect": "*"

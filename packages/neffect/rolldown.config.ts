@@ -5,7 +5,6 @@ const config: RolldownOptions = {
 	input: {
 		link: "./src/router/link.tsx",
 		server: "./src/server/server.ts",
-		cli: "./src/cli.ts",
 		document: "./src/server/_document.tsx",
 		app: "./src/server/_app.tsx",
 		plugin: "./src/plugin.ts",

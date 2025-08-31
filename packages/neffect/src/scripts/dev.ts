@@ -1,4 +1,4 @@
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
+import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
 import { watch } from "rolldown";
 import { ProvidedBuildConfig, ProvidedBuildConfigLive } from "../app-config.ts";
@@ -16,7 +16,7 @@ const dev = Effect.gen(function* () {
 });
 
 if (import.meta.main) {
-	NodeRuntime.runMain(
+	BunRuntime.runMain(
 		build
 			.pipe(
 				Effect.andThen(() => Effect.forkDaemon(Layer.launch(server))),
@@ -24,7 +24,7 @@ if (import.meta.main) {
 			)
 			.pipe(
 				Effect.provide(ProvidedBuildConfigLive),
-				Effect.provide(NodeContext.layer),
+				Effect.provide(BunContext.layer),
 			),
 	);
 }

@@ -81,6 +81,7 @@ export function definePluginConfig(
 				"react-dom": "preact/compat",
 				"react/jsx-runtime": "preact/jsx-runtime",
 				"neffect/link": `${import.meta.dirname}/router/link.tsx`,
+				"neffect/app-config": `${import.meta.dirname}/app-config.ts`,
 				"neffect/server": `${import.meta.dirname}/server/server.ts`,
 				"neffect/use-*": `${import.meta.dirname}/router/use-*.ts`,
 				"neffect/document": `${import.meta.dirname}/server/_document.tsx`,

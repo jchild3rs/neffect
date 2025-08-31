@@ -1,5 +1,5 @@
 import { FileSystem } from "@effect/platform";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
+import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
 import { ProvidedBuildConfigLive } from "../app-config.ts";
 import { server, warmUpServerImports } from "../server/server.ts";
@@ -19,10 +19,10 @@ const start = Effect.gen(function* () {
 });
 
 if (import.meta.main) {
-	NodeRuntime.runMain(
+	BunRuntime.runMain(
 		start.pipe(
 			Effect.provide(ProvidedBuildConfigLive),
-			Effect.provide(NodeContext.layer),
+			Effect.provide(BunContext.layer),
 		),
 	);
 }

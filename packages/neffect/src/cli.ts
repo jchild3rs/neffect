@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { Command } from "@effect/cli";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
+import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
 import { ProvidedBuildConfigLive } from "./app-config.ts";
 import build from "./scripts/build.ts";
@@ -37,11 +37,11 @@ const cli = Command.run(command, {
 	version: "0.1.0",
 });
 
-const MainLayer = Layer.mergeAll(NodeContext.layer);
+const MainLayer = Layer.mergeAll(BunContext.layer);
 
 cli(process.argv).pipe(
 	Effect.provide(ProvidedBuildConfigLive),
 	Effect.provide(MainLayer),
 	Effect.tapErrorCause(Effect.logError),
-	NodeRuntime.runMain,
+	BunRuntime.runMain,
 );

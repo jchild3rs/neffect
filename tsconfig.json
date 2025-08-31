@@ -2,7 +2,7 @@
 	"files": [],
 	"references": [
 		{ "path": "./examples/00-basic/tsconfig.json" },
-		{ "path": "./examples/02-styling-tailwind/tsconfig.json" },
+		{ "path": "./examples/03-css-tailwind/tsconfig.json"},
 		{ "path": "./packages/neffect/tsconfig.json" }
 	]
 }

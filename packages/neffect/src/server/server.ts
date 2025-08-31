@@ -1,4 +1,3 @@
-import { createServer } from "node:http";
 import {
 	FileSystem,
 	HttpMiddleware,
@@ -9,10 +8,10 @@ import {
 import type { PlatformError } from "@effect/platform/Error";
 import type { ServeError } from "@effect/platform/HttpServerError";
 import {
-	NodeContext,
-	NodeHttpServer,
-	NodeRuntime,
-} from "@effect/platform-node";
+	BunContext,
+	BunHttpServer,
+	BunRuntime,
+} from "@effect/platform-bun";
 import { type ConfigError, Effect, Layer } from "effect";
 import { ProvidedBuildConfig, ProvidedBuildConfigLive } from "../app-config.ts";
 import { serverPortConfig } from "./config.ts";
@@ -65,23 +64,6 @@ const baseRouter = HttpRouter.empty.pipe(
 	RouteCatchAll,
 );
 
-// let providedRouter = HttpRouter.empty;
-// try {
-// 	providedRouter = await import(`${process.cwd()}/build/server/router.js`).then(
-// 		(mod) => mod.default as HttpRouter.HttpRouter,
-// 	);
-// } catch (error: unknown) {
-// 	if (
-// 		(
-// 			error as {
-// 				code: string;
-// 			}
-// 		).code !== "ERR_MODULE_NOT_FOUND"
-// 	) {
-// 		console.error(error);
-// 	}
-// }
-
 const defaultMiddleware = HttpMiddleware.make((app) => app);
 
 const { providedRouter, middleware } = await Effect.runPromise(
@@ -106,7 +88,7 @@ const HttpServerLive = Layer.unwrapEffect(
 	Effect.gen(function* () {
 		const port = yield* serverPortConfig;
 
-		return NodeHttpServer.layer(() => createServer(), { port });
+		return BunHttpServer.layer({ port });
 	}),
 );
 
@@ -156,7 +138,7 @@ export const server: Layer.Layer<
 	Layer.provide(HttpServerLive),
 	Layer.provide(ProvidedBuildConfigLive),
 	Layer.provide(NodeSdkLive),
-	Layer.provide(NodeContext.layer),
+	Layer.provide(BunContext.layer),
 );
 
 export const warmUpServerImports = Effect.gen(function* () {
@@ -175,8 +157,8 @@ export const warmUpServerImports = Effect.gen(function* () {
 });
 
 if (import.meta.main) {
-	NodeRuntime.runMain(
+	BunRuntime.runMain(
 		warmUpServerImports.pipe(Effect.provide(ProvidedBuildConfigLive)),
 	);
-	NodeRuntime.runMain(Layer.launch(server));
+	BunRuntime.runMain(Layer.launch(server));
 }

@@ -23,6 +23,7 @@ export const RouteCatchAll = HttpRouter.all(
 	"*",
 	Effect.gen(function* () {
 		const request = yield* HttpServerRequest.HttpServerRequest;
+		const isProd = yield* isProduction;
 		const uuid = yield* Uuid;
 		const buildConfig = yield* ProvidedBuildConfig;
 		const publicFilesMap = yield* PublicFilesMap;
@@ -94,9 +95,58 @@ export const RouteCatchAll = HttpRouter.all(
 			return HttpServerResponse.unsafeJson(data, { headers: responseHeaders });
 		}
 
-		const isProd = yield* isProduction;
+		const staticMatch = routeManifest[request.url]
+		if (staticMatch && staticMatch.type !== "asset") {
+			const route = staticMatch
+			const routeHandler = yield* RouteHandler;
+			const importMap = yield* Effect.promise(() =>
+				import(
+					`${process.cwd()}/${buildConfig.outDir}/client/importmap.json${
+						isProd
+							? ""
+							: // this is a module cache bust for dev mode
+							`?${Math.random()}`
+					}`,
+					{
+						with: { type: "json" },
+					}
+					).then((mod) => mod.default),
+			);
+
+			const urlSearchParams = new URLSearchParams(
+				request.url.split("?")[1] ?? "",
+			);
+			const query: Record<string, string | string[] | undefined> = {};
+
+			for (const [key, value] of urlSearchParams.entries()) {
+				if (query[key]) {
+					query[key] = Array.isArray(query[key])
+						? [...query[key], value]
+						: [query[key], value];
+				} else {
+					query[key] = value;
+				}
+			}
+
+			const params = {}
+
+			const routeCssEntry = clientManifest[
+				`${route.name}.css`
+				] as ManifestChunk;
+
+			return yield* routeHandler({
+				routeCssEntry,
+				routeManifest,
+				importMap,
+				route,
+				params,
+				query,
+			});
+		}
+
 		for (const route of Object.values(routeManifest)) {
 			if (route.type === "asset") continue;
+
 
 			const match = route.pattern?.exec(request.url);
 			if (match) {

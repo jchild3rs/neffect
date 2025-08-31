@@ -1,28 +1,35 @@
-import "urlpattern-polyfill";
-import { randomBytes } from "node:crypto";
-import { HttpServerResponse } from "@effect/platform";
-import { signal } from "@preact/signals";
-import { Data, Effect, Option, Stream } from "effect";
-import type { FunctionComponent } from "preact";
-import { renderToReadableStream } from "preact-render-to-string/stream";
-import { ProvidedBuildConfig } from "./app-config.ts";
-import type { RouterContext } from "./router/router-context.tsx";
-import type { AppComponent } from "./server/_app.tsx";
+import 'urlpattern-polyfill';
+import { HttpServerResponse } from '@effect/platform';
+import { signal } from '@preact/signals';
+import { Data, Effect, Option, Stream } from 'effect';
+import { randomBytes } from 'node:crypto';
+import type { FunctionComponent } from 'preact';
+import {
+	renderToReadableStream,
+} from 'preact-render-to-string/stream';
+import { ProvidedBuildConfig } from './app-config.ts';
+import type {
+	RouterContext,
+} from './router/router-context.tsx';
+import type { AppComponent } from './server/_app.tsx';
 import {
 	type DocumentComponent,
 	DocumentHead,
 	DocumentScripts,
-} from "./server/_document.tsx";
-import { DOCTYPE_HTML_CHUNK } from "./server/constants.tsx";
-import type { ImportMapJSON } from "./server/import-map.ts";
-import { loadModule, tryLoadModule } from "./server/load-module.ts";
+} from './server/_document.tsx';
+import { DOCTYPE_HTML_CHUNK } from './server/constants.tsx';
+import type { ImportMapJSON } from './server/import-map.ts';
+import {
+	loadModule,
+	tryLoadModule,
+} from './server/load-module.ts';
 import type {
 	Manifest,
 	ManifestChunk,
 	Metadata,
 	RouteComponent,
 	RouteDataModule,
-} from "./types.ts";
+} from './types.ts';
 
 class StreamRenderError extends Data.TaggedError("StreamRenderError") {
 	cause: unknown;
@@ -62,6 +69,120 @@ const getPageData = (path: string) =>
 		),
 	);
 
+export const renderRoute = (
+	{
+		routeCssEntry,
+		routeManifest,
+		importMap,
+		route,
+		params,
+		query,
+		nonce
+	}: {
+		routeCssEntry: ManifestChunk,
+		routeManifest: Manifest,
+		importMap: ImportMapJSON,
+		route: ManifestChunk,
+		params: Record<string, string | undefined>,
+		query: Record<string, string | string[] | undefined>,
+		nonce: string
+	},
+) => Effect.gen(function* () {
+	const { assetBaseUrl, outDir, routeDir } = yield* ProvidedBuildConfig;
+	const Page = yield* loadModule<RouteComponent>(
+		`/${outDir}/server/${route.file}`,
+		true,
+	);
+	const { data, metadata } = yield* getPageData(
+		`/${outDir}/server/${route.file}`,
+	);
+	const pageProps = { data, query, params };
+
+	const routeContext: RouterContext = {
+		query: signal(query),
+		params: signal(params),
+		pathPattern: route.pathPattern || "/",
+	};
+
+	const BaseDocument = yield* loadModule<DocumentComponent>(
+		`/${outDir}/server/base/_document.js`,
+		true,
+	);
+
+	const BaseApp = yield* loadModule<AppComponent>(
+		`/${outDir}/server/base/_app.js`,
+		true,
+	);
+
+	const Document = Option.getOrElse(
+		yield* tryLoadModule<DocumentComponent>(
+			`/${outDir}/server/${routeDir}/_document.js`,
+			true,
+		),
+		() => BaseDocument,
+	);
+
+	const App = yield* tryLoadModule<FunctionComponent>(
+		`/${outDir}/server/${routeDir}/_app.js`,
+		true,
+	);
+
+
+	const head = (
+		<DocumentHead assetBaseUrl={assetBaseUrl} routeCssEntry={routeCssEntry}>
+			<title>{metadata.title}</title>
+			{metadata.description && (
+				<meta name="description" content={metadata.description} />
+			)}
+		</DocumentHead>
+	);
+
+	const scripts = (
+		<DocumentScripts
+			assetBaseUrl={assetBaseUrl}
+			routeDir={routeDir}
+			nonce={nonce}
+			routeCssEntry={routeCssEntry}
+			routeManifest={routeManifest}
+			route={route}
+			routeData={data}
+			routeContext={routeContext}
+			hasProvidedApp={Boolean(App)}
+			importMap={importMap}
+		/>
+	);
+
+	const body = (
+		<BaseApp routeContext={routeContext}>
+			{App._tag === "Some" ? (
+				<App.value>
+					<Page {...pageProps} />
+				</App.value>
+			) : (
+				<Page {...pageProps} />
+			)}
+		</BaseApp>
+	);
+
+	return (
+		<Document
+			assetBaseUrl={assetBaseUrl}
+			nonce={nonce}
+			routeDir={routeDir}
+			routeCssEntry={routeCssEntry}
+			routeManifest={routeManifest}
+			route={route}
+			routeData={data}
+			routeContext={routeContext}
+			hasProvidedApp={App._tag === "Some"}
+			body={body}
+			head={head}
+			scripts={scripts}
+			importMap={importMap}
+		/>
+	)
+})
+
 export const handle = ({
 	routeCssEntry,
 	routeManifest,
@@ -78,100 +199,19 @@ export const handle = ({
 	query: Record<string, string | string[] | undefined>;
 }) =>
 	Effect.gen(function* () {
-		const { assetBaseUrl, outDir, routeDir } = yield* ProvidedBuildConfig;
-		const Page = yield* loadModule<RouteComponent>(
-			`/${outDir}/server/${route.file}`,
-			true,
-		);
-		const { data, metadata } = yield* getPageData(
-			`/${outDir}/server/${route.file}`,
-		);
-		const pageProps = { data, query, params };
-
-		const routeContext: RouterContext = {
-			query: signal(query),
-			params: signal(params),
-			pathPattern: route.pathPattern || "/",
-		};
-
-		const BaseDocument = yield* loadModule<DocumentComponent>(
-			`/${outDir}/server/base/_document.js`,
-			true,
-		);
-
-		const BaseApp = yield* loadModule<AppComponent>(
-			`/${outDir}/server/base/_app.js`,
-			true,
-		);
-
-		const Document = Option.getOrElse(
-			yield* tryLoadModule<DocumentComponent>(
-				`/${outDir}/server/${routeDir}/_document.js`,
-				true,
-			),
-			() => BaseDocument,
-		);
-
-		const App = yield* tryLoadModule<FunctionComponent>(
-			`/${outDir}/server/${routeDir}/_app.js`,
-			true,
-		);
-
 		const nonce = randomBytes(16).toString("base64");
 
-		const head = (
-			<DocumentHead assetBaseUrl={assetBaseUrl} routeCssEntry={routeCssEntry}>
-				<title>{metadata.title}</title>
-				{metadata.description && (
-					<meta name="description" content={metadata.description} />
-				)}
-			</DocumentHead>
-		);
-
-		const scripts = (
-			<DocumentScripts
-				assetBaseUrl={assetBaseUrl}
-				routeDir={routeDir}
-				nonce={nonce}
-				routeCssEntry={routeCssEntry}
-				routeManifest={routeManifest}
-				route={route}
-				routeData={data}
-				routeContext={routeContext}
-				hasProvidedApp={Boolean(App)}
-				importMap={importMap}
-			/>
-		);
-
-		const body = (
-			<BaseApp routeContext={routeContext}>
-				{App._tag === "Some" ? (
-					<App.value>
-						<Page {...pageProps} />
-					</App.value>
-				) : (
-					<Page {...pageProps} />
-				)}
-			</BaseApp>
-		);
-
-		const document = (
-			<Document
-				assetBaseUrl={assetBaseUrl}
-				nonce={nonce}
-				routeDir={routeDir}
-				routeCssEntry={routeCssEntry}
-				routeManifest={routeManifest}
-				route={route}
-				routeData={data}
-				routeContext={routeContext}
-				hasProvidedApp={App._tag === "Some"}
-				body={body}
-				head={head}
-				scripts={scripts}
-				importMap={importMap}
-			/>
-		);
+		const document = yield* renderRoute(
+			{
+				routeCssEntry: routeCssEntry,
+				routeManifest: routeManifest,
+				importMap: importMap,
+				route: route,
+				params: params,
+				query: query,
+				nonce: nonce
+			}
+		)
 
 		return yield* HttpServerResponse.stream(
 			Stream.concat(

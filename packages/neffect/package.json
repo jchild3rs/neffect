@@ -10,7 +10,7 @@
 		"@effect/cli": "^0.69.2",
 		"@effect/opentelemetry": "^0.56.4",
 		"@effect/platform": "^0.90.6",
-		"@effect/platform-node": "^0.96.0",
+		"@effect/platform-bun": "^0.79.0",
 		"@opentelemetry/exporter-trace-otlp-http": "^0.203.0",
 		"@opentelemetry/sdk-trace-base": "^2.0.1",
 		"@opentelemetry/sdk-trace-node": "^2.0.1",
