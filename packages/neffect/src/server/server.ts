@@ -17,6 +17,7 @@ import { type ConfigError, Effect, Layer } from "effect";
 import { ProvidedBuildConfig, ProvidedBuildConfigLive } from "../app-config.ts";
 import { serverPortConfig } from "./config.ts";
 import { ImportMapLive } from "./import-map.ts";
+import { loadModule } from "./load-module.ts";
 import {
 	ClientManifestLive,
 	RouteManifestLive,
@@ -158,8 +159,6 @@ export const server: Layer.Layer<
 	Layer.provide(NodeContext.layer),
 );
 
-// Storing in memory here – so there's no _actual_ async
-// behavior when importing these during routing.
 export const warmUpServerImports = Effect.gen(function* () {
 	const buildConfig = yield* ProvidedBuildConfig;
 	const manifest = yield* Effect.promise(() =>
@@ -167,11 +166,11 @@ export const warmUpServerImports = Effect.gen(function* () {
 			with: { type: "json" },
 		}).then((mod) => mod.default),
 	);
-	const importPaths = Object.keys(manifest)
-		.filter((path) => path.endsWith(".js"))
-		.map((path) => `${process.cwd()}/${buildConfig.outDir}/server/${path}`);
+
 	yield* Effect.all(
-		importPaths.map((path) => Effect.promise(() => import(path))),
+		Object.keys(manifest)
+			.filter((path) => path.endsWith(".js"))
+			.map((path) => loadModule(`/${buildConfig.outDir}/server/${path}`)),
 	);
 });
 
